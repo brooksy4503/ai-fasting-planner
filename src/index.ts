@@ -56,7 +56,7 @@ function loadTestConfig(configPath: string): TestConfig {
 }
 
 program
-    .name('ai-plan')
+    .name('fast-plan')
     .description('AI-powered keto meal planner with 36-hour fasting support')
     .version('1.0.0');
 

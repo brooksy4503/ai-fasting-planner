@@ -4,7 +4,7 @@
   "description": "AI-powered keto meal planner with 36-hour fasting support",
   "main": "./dist/index.js",
   "bin": {
-    "ai-plan": "./dist/index.js"
+    "fast-plan": "./dist/index.js"
   },
   "scripts": {
     "start": "ts-node src/index.ts",
