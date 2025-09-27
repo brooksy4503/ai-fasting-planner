@@ -171,9 +171,13 @@ program
 
         const prompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
 
-        // Create OpenRouter provider instance with API key
+        // Create OpenRouter provider instance with API key and attribution headers
         const openrouterProvider = createOpenRouter({
             apiKey: apiKey,
+            headers: {
+                'HTTP-Referer': process.env.APP_URL || 'https://github.com/your-username/ai-fasting-planner', // Your app's URL
+                'X-Title': process.env.APP_TITLE || 'AI Fasting Planner', // Your app's display name
+            },
         });
 
         const { text: mealsText } = await generateText({

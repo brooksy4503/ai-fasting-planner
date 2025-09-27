@@ -46,11 +46,17 @@ npm run build
 ```bash
 # Edit .env.local file
 OPENROUTER_API_KEY=your_actual_api_key_here
+
+# Optional: Configure app attribution for OpenRouter analytics
+APP_URL=https://github.com/your-username/ai-fasting-planner
+APP_TITLE=AI Fasting Planner
 ```
 
 **Alternative**: Set as environment variable:
 ```bash
 export OPENROUTER_API_KEY=your_key_here
+export APP_URL=https://github.com/your-username/ai-fasting-planner
+export APP_TITLE="AI Fasting Planner"
 ```
 
 ### 4. Run the CLI
@@ -147,6 +153,40 @@ Create your own JSON file with any combination of these fields:
 ```
 
 **Note**: Any fields not specified in the config file will still prompt you interactively. This allows for partial automation where you only pre-fill the fields you want to test with.
+
+## OpenRouter Analytics & Attribution
+
+This app includes OpenRouter app attribution to track usage analytics and appear in OpenRouter's public rankings. This helps monitor API usage patterns and showcases the app to the OpenRouter developer community.
+
+### Benefits
+
+- **Public App Rankings**: Your app appears in [OpenRouter's rankings](https://openrouter.ai/rankings) with daily, weekly, and monthly leaderboards
+- **Model Analytics**: View detailed analytics at `openrouter.ai/apps?url=<your-app-url>` showing:
+  - Model usage over time
+  - Token consumption patterns
+  - Historical usage trends
+- **Professional Visibility**: Showcase your app to the OpenRouter developer community
+
+### Configuration
+
+App attribution is configured via environment variables:
+
+```bash
+# Your app's URL (used as primary identifier)
+APP_URL=https://github.com/your-username/ai-fasting-planner
+
+# Your app's display name in rankings
+APP_TITLE=AI Fasting Planner
+```
+
+If not configured, the app will use default values. For localhost development, make sure to set `APP_TITLE` to enable tracking.
+
+### Analytics Access
+
+Once configured and after making API calls, you can view your app's analytics at:
+`https://openrouter.ai/apps?url=<your-app-url>`
+
+For more information, see the [OpenRouter App Attribution documentation](https://openrouter.ai/docs/app-attribution).
 
 ## Development
 
