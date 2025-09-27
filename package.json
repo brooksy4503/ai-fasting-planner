@@ -23,12 +23,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/ai-fasting-planner.git"
+    "url": "git+https://github.com/brooksy4503/ai-fasting-planner.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/ai-fasting-planner/issues"
+    "url": "https://github.com/brooksy4503/ai-fasting-planner/issues"
   },
-  "homepage": "https://github.com/your-username/ai-fasting-planner#readme",
+  "homepage": "https://github.com/brooksy4503/ai-fasting-planner#readme",
   "keywords": [
     "ai",
     "keto",
@@ -36,7 +36,7 @@
     "meal-planner",
     "cli"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Garth Scaysbrook",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
