@@ -1,0 +1,41 @@
+{
+  "name": "ai-fasting-planner",
+  "version": "1.0.0",
+  "description": "AI-powered keto meal planner with 36-hour fasting support",
+  "main": "index.js",
+  "bin": {
+    "ai-plan": "./dist/index.js"
+  },
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "keto",
+    "fasting",
+    "meal-planner",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@openrouter/ai-sdk-provider": "^1.2.0",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.5.2",
+    "ai": "^5.0.56",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.2",
+    "inquirer": "^12.9.6",
+    "ts-node": "^10.9.2",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/json-schema": "^7.0.15"
+  }
+}
