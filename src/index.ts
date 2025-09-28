@@ -161,10 +161,13 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
         .replace(/\$\{finalAnswers\.diet\}/g, finalAnswers.diet);
 }
 
+// Read version from package.json
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+
 program
     .name('fast-plan')
     .description('AI-powered keto meal planner with 36-hour fasting support')
-    .version('1.2.0');
+    .version(packageJson.version);
 
 // Setup command for initial configuration
 program
