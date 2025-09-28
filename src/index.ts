@@ -14,6 +14,7 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { z } from 'zod';
+import { WaitingExperience, WaitingExperienceType } from './waitingExperience';
 
 const program = new Command();
 
@@ -946,11 +947,18 @@ program
             },
         });
 
-        const { object: mealPlan } = await generateObject({
-            model: openrouterProvider('x-ai/grok-4-fast'),
-            prompt,
-            schema: mealPlanSchema,
-        });
+        // Ask user what they want to do while waiting
+        const experienceType = await WaitingExperience.chooseExperience();
+
+        // Generate meal plan with waiting experience
+        const { object: mealPlan } = await WaitingExperience.handleWaitingPeriod(
+            () => generateObject({
+                model: openrouterProvider('x-ai/grok-4-fast'),
+                prompt,
+                schema: mealPlanSchema,
+            }),
+            experienceType
+        );
 
         // Debug: Log AI response for troubleshooting
         if (process.env.DEBUG_PROMPT || testConfig.promptTemplate) {
