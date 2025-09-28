@@ -41,6 +41,7 @@ interface TestConfig {
     age?: string;
     height?: string;
     activityLevel?: string;
+    promptTemplate?: string;
 }
 
 interface GlobalConfig {
@@ -143,6 +144,21 @@ function clearGlobalConfig(): void {
         console.error(chalk.red('❌ Error clearing configuration'));
         console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
     }
+}
+
+function evaluatePromptTemplate(template: string, finalAnswers: Config): string {
+    // Replace template variables with actual values
+    return template
+        .replace(/\$\{finalAnswers\.sex\}/g, finalAnswers.sex)
+        .replace(/\$\{finalAnswers\.age\}/g, finalAnswers.age)
+        .replace(/\$\{finalAnswers\.height\}/g, finalAnswers.height)
+        .replace(/\$\{finalAnswers\.currentWeight\}/g, finalAnswers.currentWeight)
+        .replace(/\$\{finalAnswers\.targetWeight\}/g, finalAnswers.targetWeight)
+        .replace(/\$\{finalAnswers\.timeframe\}/g, finalAnswers.timeframe)
+        .replace(/\$\{finalAnswers\.activityLevel\}/g, finalAnswers.activityLevel)
+        .replace(/\$\{finalAnswers\.fastingStart\}/g, finalAnswers.fastingStart)
+        .replace(/\$\{finalAnswers\.fastingEnd\}/g, finalAnswers.fastingEnd)
+        .replace(/\$\{finalAnswers\.diet\}/g, finalAnswers.diet);
 }
 
 program
@@ -545,7 +561,17 @@ program
             await promptToSaveApiKey(finalAnswers.apiKey);
         }
 
-        const prompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
+        // Use custom prompt template if provided, otherwise use default
+        const defaultPrompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
+
+        const prompt = testConfig.promptTemplate
+            ? evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers)
+            : defaultPrompt;
+
+        // Log which prompt is being used for debugging
+        if (testConfig.promptTemplate) {
+            console.log(chalk.yellow('🧪 Using custom prompt template from config'));
+        }
 
         // Create OpenRouter provider instance with API key and attribution headers
         const openrouterProvider = createOpenRouter({
