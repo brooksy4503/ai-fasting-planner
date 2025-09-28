@@ -1,5 +1,8 @@
 {
     "promptTemplate": "Create a comprehensive 6-day keto meal plan with detailed cooking instructions and nutritional information. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Each meal should be home-cooked, under 30 minutes prep time, and strictly avoid processed foods, sugary drinks, and high-carb items. Include specific ingredients, cooking steps, and estimated macros (fat/protein/carbs). Tailor the portions and ingredients for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Meal Name] - Ingredients: [...] - Instructions: [...] - Macros: [...], 2. Monday: [continue pattern]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
     "currentWeight": "180 lbs",
     "targetWeight": "160 lbs",
     "sex": "Male",

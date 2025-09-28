@@ -1,5 +1,8 @@
 {
     "promptTemplate": "Create 6 budget-friendly keto meals for the week, focusing on affordable ingredients and minimal waste. Skip Saturday due to 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Prioritize: eggs, ground meat, seasonal vegetables, bulk ingredients. Avoid expensive items like specialty keto products. Each meal should cost under $8 per serving and be suitable for meal prep. Target person: ${finalAnswers.sex}, age ${finalAnswers.age}, ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, goal ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Format: 1. Sunday: [Meal] - Est. cost: $X - Prep tip: [...], 2. Monday: [continue]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
     "currentWeight": "190 lbs",
     "targetWeight": "170 lbs",
     "sex": "Male",

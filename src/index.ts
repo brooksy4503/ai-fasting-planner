@@ -566,14 +566,22 @@ program
 
         // Use custom prompt template if provided, otherwise use default
         const defaultPrompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
-
-        const prompt = testConfig.promptTemplate
+        
+        const prompt = testConfig.promptTemplate 
             ? evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers)
             : defaultPrompt;
-
-        // Log which prompt is being used for debugging
+        
+        // Debug logging for development
         if (testConfig.promptTemplate) {
             console.log(chalk.yellow('🧪 Using custom prompt template from config'));
+            console.log(chalk.gray('📋 Final answers:'), finalAnswers);
+            console.log(chalk.gray('📝 Raw template:'), testConfig.promptTemplate);
+            console.log(chalk.gray('🔄 Evaluated prompt:'), prompt);
+        } else {
+            console.log(chalk.blue('📝 Using default prompt'));
+            if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROMPT) {
+                console.log(chalk.gray('🔄 Prompt:'), prompt);
+            }
         }
 
         // Create OpenRouter provider instance with API key and attribution headers
