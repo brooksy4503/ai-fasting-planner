@@ -918,19 +918,7 @@ program
         }
 
         // Use custom prompt template if provided, otherwise use default
-        const defaultPrompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). 
-
-Requirements:
-- Home-cooked meals, under 30 minutes prep time
-- No junk food (pies, sausage rolls, sugary drinks)
-- Low/no carbs, no sugars, keto-friendly
-- Inspired by intentional home-cooked meals for weight loss
-
-Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}.
-
-Provide meals for: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday (skip Saturday for fasting).
-
-For each day, you can provide 1-3 meals (breakfast, lunch, dinner) as appropriate. Include meal names, optional prep time, and optional basic macros if available.`;
+        const defaultPrompt = `Create a comprehensive 6-day keto meal plan with detailed cooking instructions and nutritional information. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Each meal should be home-cooked, under 30 minutes prep time, and strictly avoid processed foods, sugary drinks, and high-carb items. Include specific ingredients, cooking steps, and estimated macros (fat/protein/carbs). Tailor the portions and ingredients for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Meal Name] - Ingredients: [...] - Instructions: [...] - Macros: [...], 2. Monday: [continue pattern]`;
 
         const prompt = testConfig.promptTemplate
             ? evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers)
