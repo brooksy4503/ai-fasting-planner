@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 // Load environment variables from .env.local first, then .env
 dotenv.config({ path: path.join(process.cwd(), '.env.local') });
@@ -42,6 +43,24 @@ interface TestConfig {
     activityLevel?: string;
 }
 
+interface GlobalConfig {
+    apiKey?: string;
+    appUrl?: string;
+    appTitle?: string;
+    defaults?: {
+        fastingStart?: string;
+        fastingEnd?: string;
+        diet?: string;
+        currentWeight?: string;
+        targetWeight?: string;
+        timeframe?: string;
+        sex?: string;
+        age?: string;
+        height?: string;
+        activityLevel?: string;
+    };
+}
+
 function loadTestConfig(configPath: string): TestConfig {
     try {
         const configFile = fs.readFileSync(configPath, 'utf8');
@@ -55,17 +74,355 @@ function loadTestConfig(configPath: string): TestConfig {
     }
 }
 
+// Global Configuration Functions
+function getGlobalConfigPath(): string {
+    return path.join(os.homedir(), '.ai-fasting-planner', 'config.json');
+}
+
+function loadGlobalConfig(): GlobalConfig {
+    try {
+        const configPath = getGlobalConfigPath();
+        if (fs.existsSync(configPath)) {
+            const configFile = fs.readFileSync(configPath, 'utf8');
+            const config = JSON.parse(configFile);
+            return config;
+        }
+    } catch (error) {
+        console.warn(chalk.yellow('⚠️  Warning: Could not load global config, using defaults'));
+    }
+    return {};
+}
+
+function saveGlobalConfig(config: GlobalConfig): void {
+    try {
+        const configPath = getGlobalConfigPath();
+        const configDir = path.dirname(configPath);
+
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+        }
+
+        // Merge with existing config to preserve other settings
+        const existingConfig = loadGlobalConfig();
+        const mergedConfig = { ...existingConfig, ...config };
+
+        fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
+        console.log(chalk.green(`✅ Configuration saved to: ${configPath}`));
+    } catch (error) {
+        console.error(chalk.red('❌ Error saving configuration'));
+        console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    }
+}
+
+async function promptToSaveApiKey(apiKey: string): Promise<void> {
+    const { saveKey } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'saveKey',
+        message: 'Save API key for future use?',
+        default: true
+    }]);
+
+    if (saveKey) {
+        const globalConfig = loadGlobalConfig();
+        globalConfig.apiKey = apiKey;
+        saveGlobalConfig(globalConfig);
+    }
+}
+
+function clearGlobalConfig(): void {
+    try {
+        const configPath = getGlobalConfigPath();
+        if (fs.existsSync(configPath)) {
+            fs.unlinkSync(configPath);
+            console.log(chalk.green('✅ Global configuration cleared'));
+        } else {
+            console.log(chalk.yellow('⚠️  No global configuration found to clear'));
+        }
+    } catch (error) {
+        console.error(chalk.red('❌ Error clearing configuration'));
+        console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    }
+}
+
 program
     .name('fast-plan')
     .description('AI-powered keto meal planner with 36-hour fasting support')
-    .version('1.0.0');
+    .version('1.0.1');
+
+// Setup command for initial configuration
+program
+    .command('setup')
+    .description('Set up your API key and default preferences')
+    .action(async () => {
+        console.log(chalk.cyan('🚀 Welcome to AI Fasting Planner Setup!'));
+        console.log(chalk.gray('This will help you configure your API key and default preferences.\n'));
+
+        const globalConfig = loadGlobalConfig();
+
+        // API Key setup
+        const { apiKey } = await inquirer.prompt([{
+            type: 'password',
+            name: 'apiKey',
+            message: 'Enter your OpenRouter API Key:',
+            default: globalConfig.apiKey,
+            validate: (input: string) => {
+                if (!input || input.trim().length === 0) {
+                    return 'API key is required. Get one from https://openrouter.ai/keys';
+                }
+                return true;
+            }
+        }]);
+
+        // App attribution setup
+        const { setupAttribution } = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'setupAttribution',
+            message: 'Set up app attribution for OpenRouter analytics? (helps track usage)',
+            default: true
+        }]);
+
+        let appUrl = globalConfig.appUrl;
+        let appTitle = globalConfig.appTitle;
+
+        if (setupAttribution) {
+            const attribution = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'appUrl',
+                    message: 'App URL (for analytics):',
+                    default: globalConfig.appUrl || 'https://github.com/your-username/ai-fasting-planner'
+                },
+                {
+                    type: 'input',
+                    name: 'appTitle',
+                    message: 'App Title:',
+                    default: globalConfig.appTitle || 'AI Fasting Planner'
+                }
+            ]);
+            appUrl = attribution.appUrl;
+            appTitle = attribution.appTitle;
+        }
+
+        // Default preferences setup
+        const { setupDefaults } = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'setupDefaults',
+            message: 'Set up default preferences to skip prompts in the future?',
+            default: true
+        }]);
+
+        let defaults = globalConfig.defaults || {};
+
+        if (setupDefaults) {
+            console.log(chalk.cyan('\n📋 Setting up your default preferences:'));
+
+            const defaultPrefs = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'fastingStart',
+                    message: 'Default fasting start:',
+                    default: defaults.fastingStart || 'Friday 8pm'
+                },
+                {
+                    type: 'input',
+                    name: 'fastingEnd',
+                    message: 'Default fasting end:',
+                    default: defaults.fastingEnd || 'Sunday 8am'
+                },
+                {
+                    type: 'list',
+                    name: 'diet',
+                    message: 'Default diet:',
+                    choices: ['Keto', 'Low-Carb', 'Custom'],
+                    default: defaults.diet || 'Keto'
+                },
+                {
+                    type: 'list',
+                    name: 'sex',
+                    message: 'Sex:',
+                    choices: ['Male', 'Female', 'Other'],
+                    default: defaults.sex
+                },
+                {
+                    type: 'input',
+                    name: 'age',
+                    message: 'Age:',
+                    default: defaults.age,
+                    validate: (input: string) => {
+                        const age = parseInt(input);
+                        if (isNaN(age) || age < 1 || age > 120) {
+                            return 'Please enter a valid age (1-120)';
+                        }
+                        return true;
+                    }
+                },
+                {
+                    type: 'input',
+                    name: 'height',
+                    message: 'Height (e.g., 5\'10" or 178 cm):',
+                    default: defaults.height
+                },
+                {
+                    type: 'list',
+                    name: 'activityLevel',
+                    message: 'Activity level:',
+                    choices: [
+                        'Sedentary (little to no exercise, <2k steps/day)',
+                        'Lightly Active (light exercise, 1-3 days/week, 3-5k steps)',
+                        'Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)',
+                        'Very Active (intense exercise, 6-7 days/week, >10k steps)',
+                    ],
+                    default: defaults.activityLevel || 'Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)'
+                }
+            ]);
+
+            defaults = defaultPrefs;
+        }
+
+        // Save configuration
+        const newConfig: GlobalConfig = {
+            apiKey,
+            appUrl,
+            appTitle,
+            defaults
+        };
+
+        saveGlobalConfig(newConfig);
+
+        console.log(chalk.green('\n🎉 Setup complete!'));
+        console.log(chalk.gray(`Configuration saved to: ${getGlobalConfigPath()}`));
+        console.log(chalk.cyan('\nYou can now run: fast-plan generate'));
+        console.log(chalk.gray('Your API key and defaults will be used automatically.\n'));
+    });
+
+// Config command to view and manage settings
+program
+    .command('config')
+    .description('View or manage your configuration')
+    .option('--show', 'Show current configuration')
+    .option('--clear', 'Clear all saved configuration')
+    .option('--path', 'Show configuration file path')
+    .action(async (options) => {
+        const configPath = getGlobalConfigPath();
+
+        if (options.path) {
+            console.log(chalk.cyan('Configuration file path:'));
+            console.log(configPath);
+            return;
+        }
+
+        if (options.clear) {
+            const { confirm } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'confirm',
+                message: 'Are you sure you want to clear all saved configuration?',
+                default: false
+            }]);
+
+            if (confirm) {
+                clearGlobalConfig();
+            } else {
+                console.log(chalk.yellow('Configuration clearing cancelled.'));
+            }
+            return;
+        }
+
+        if (options.show) {
+            const globalConfig = loadGlobalConfig();
+
+            if (Object.keys(globalConfig).length === 0) {
+                console.log(chalk.yellow('⚠️  No global configuration found.'));
+                console.log(chalk.gray('Run "fast-plan setup" to configure your settings.'));
+                return;
+            }
+
+            console.log(chalk.cyan('📋 Current Configuration:'));
+            console.log(chalk.gray(`Location: ${configPath}\n`));
+
+            // Show API key status (masked)
+            if (globalConfig.apiKey) {
+                const maskedKey = globalConfig.apiKey.substring(0, 8) + '...' + globalConfig.apiKey.slice(-4);
+                console.log(chalk.green(`✅ API Key: ${maskedKey}`));
+            } else {
+                console.log(chalk.red('❌ API Key: Not set'));
+            }
+
+            // Show app attribution
+            if (globalConfig.appUrl || globalConfig.appTitle) {
+                console.log(chalk.cyan('\n🔗 App Attribution:'));
+                if (globalConfig.appUrl) console.log(`   URL: ${globalConfig.appUrl}`);
+                if (globalConfig.appTitle) console.log(`   Title: ${globalConfig.appTitle}`);
+            }
+
+            // Show defaults
+            if (globalConfig.defaults && Object.keys(globalConfig.defaults).length > 0) {
+                console.log(chalk.cyan('\n⚙️  Default Preferences:'));
+                const defaults = globalConfig.defaults;
+
+                if (defaults.fastingStart) console.log(`   Fasting Start: ${defaults.fastingStart}`);
+                if (defaults.fastingEnd) console.log(`   Fasting End: ${defaults.fastingEnd}`);
+                if (defaults.diet) console.log(`   Diet: ${defaults.diet}`);
+                if (defaults.sex) console.log(`   Sex: ${defaults.sex}`);
+                if (defaults.age) console.log(`   Age: ${defaults.age}`);
+                if (defaults.height) console.log(`   Height: ${defaults.height}`);
+                if (defaults.activityLevel) console.log(`   Activity Level: ${defaults.activityLevel}`);
+                if (defaults.currentWeight) console.log(`   Current Weight: ${defaults.currentWeight}`);
+                if (defaults.targetWeight) console.log(`   Target Weight: ${defaults.targetWeight}`);
+                if (defaults.timeframe) console.log(`   Timeframe: ${defaults.timeframe}`);
+            }
+
+            console.log(chalk.gray('\nTo modify settings, run: fast-plan setup'));
+            console.log(chalk.gray('To clear all settings, run: fast-plan config --clear'));
+            return;
+        }
+
+        // Default action - interactive menu
+        const { action } = await inquirer.prompt([{
+            type: 'list',
+            name: 'action',
+            message: 'What would you like to do?',
+            choices: [
+                { name: '👀 Show current configuration', value: 'show' },
+                { name: '⚙️  Modify configuration', value: 'setup' },
+                { name: '📁 Show config file path', value: 'path' },
+                { name: '🗑️  Clear all configuration', value: 'clear' },
+                { name: '❌ Cancel', value: 'cancel' }
+            ]
+        }]);
+
+        switch (action) {
+            case 'show':
+                // Recursively call with --show option
+                await program.parseAsync(['config', '--show'], { from: 'user' });
+                break;
+            case 'setup':
+                console.log(chalk.cyan('Redirecting to setup...'));
+                await program.parseAsync(['setup'], { from: 'user' });
+                break;
+            case 'path':
+                console.log(chalk.cyan('Configuration file path:'));
+                console.log(configPath);
+                break;
+            case 'clear':
+                await program.parseAsync(['config', '--clear'], { from: 'user' });
+                break;
+            case 'cancel':
+                console.log(chalk.gray('Cancelled.'));
+                break;
+        }
+    });
 
 program
     .command('generate')
     .description('Generate keto meal plan for 36-hour fasting')
-    .option('-c, --config <path>', 'Path to test configuration JSON file')
+    .option('-c, --config <path>', 'Path to meal plan configuration JSON file')
     .action(async (options) => {
-        // Load test configuration if provided
+        // Load global configuration
+        const globalConfig = loadGlobalConfig();
+        const defaults = globalConfig.defaults || {};
+
+        // Load meal plan configuration if provided
         let testConfig: TestConfig = {};
         if (options.config) {
             testConfig = loadTestConfig(options.config);
@@ -76,14 +433,14 @@ program
                 type: 'input',
                 name: 'fastingStart',
                 message: 'Fasting start?',
-                default: testConfig.fastingStart || 'Friday 8pm',
+                default: testConfig.fastingStart || defaults.fastingStart || 'Friday 8pm',
                 when: () => !testConfig.fastingStart
             },
             {
                 type: 'input',
                 name: 'fastingEnd',
                 message: 'Fasting end?',
-                default: testConfig.fastingEnd || 'Sunday 8am',
+                default: testConfig.fastingEnd || defaults.fastingEnd || 'Sunday 8am',
                 when: () => !testConfig.fastingEnd
             },
             {
@@ -91,31 +448,34 @@ program
                 name: 'diet',
                 message: 'Diet?',
                 choices: ['Keto', 'Low-Carb', 'Custom'],
-                default: testConfig.diet || 'Keto',
+                default: testConfig.diet || defaults.diet || 'Keto',
                 when: () => !testConfig.diet
             },
             {
                 type: 'password',
                 name: 'apiKey',
                 message: 'OpenRouter API Key?',
-                when: () => !process.env.OPENROUTER_API_KEY
+                when: () => !globalConfig.apiKey && !process.env.OPENROUTER_API_KEY
             },
             {
                 type: 'input',
                 name: 'currentWeight',
                 message: 'Current weight (e.g., 200 lbs)?',
+                default: testConfig.currentWeight || defaults.currentWeight,
                 when: () => !testConfig.currentWeight
             },
             {
                 type: 'input',
                 name: 'targetWeight',
                 message: 'Target weight (e.g., 180 lbs)?',
+                default: testConfig.targetWeight || defaults.targetWeight,
                 when: () => !testConfig.targetWeight
             },
             {
                 type: 'input',
                 name: 'timeframe',
                 message: 'Timeframe to reach target (e.g., 6 months)?',
+                default: testConfig.timeframe || defaults.timeframe,
                 when: () => !testConfig.timeframe
             },
             {
@@ -123,18 +483,21 @@ program
                 name: 'sex',
                 message: 'Sex?',
                 choices: ['Male', 'Female', 'Other'],
+                default: testConfig.sex || defaults.sex,
                 when: () => !testConfig.sex
             },
             {
                 type: 'input',
                 name: 'age',
                 message: 'Age (e.g., 35)?',
+                default: testConfig.age || defaults.age,
                 when: () => !testConfig.age
             },
             {
                 type: 'input',
                 name: 'height',
                 message: 'Height (e.g., 5\'10" or 178 cm)?',
+                default: testConfig.height || defaults.height,
                 when: () => !testConfig.height
             },
             {
@@ -147,27 +510,40 @@ program
                     'Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)',
                     'Very Active (intense exercise, 6-7 days/week, >10k steps)',
                 ],
+                default: testConfig.activityLevel || defaults.activityLevel,
                 when: () => !testConfig.activityLevel
             },
         ]);
 
-        // Merge test config values with answers
+        // Merge test config values with answers and global defaults
         const finalAnswers: Config = {
-            fastingStart: testConfig.fastingStart || answers.fastingStart,
-            fastingEnd: testConfig.fastingEnd || answers.fastingEnd,
-            diet: testConfig.diet || answers.diet,
+            fastingStart: testConfig.fastingStart || answers.fastingStart || defaults.fastingStart || 'Friday 8pm',
+            fastingEnd: testConfig.fastingEnd || answers.fastingEnd || defaults.fastingEnd || 'Sunday 8am',
+            diet: testConfig.diet || answers.diet || defaults.diet || 'Keto',
             apiKey: answers.apiKey,
-            currentWeight: testConfig.currentWeight || answers.currentWeight,
-            targetWeight: testConfig.targetWeight || answers.targetWeight,
-            timeframe: testConfig.timeframe || answers.timeframe,
-            sex: testConfig.sex || answers.sex,
-            age: testConfig.age || answers.age,
-            height: testConfig.height || answers.height,
-            activityLevel: testConfig.activityLevel || answers.activityLevel,
+            currentWeight: testConfig.currentWeight || answers.currentWeight || defaults.currentWeight || '',
+            targetWeight: testConfig.targetWeight || answers.targetWeight || defaults.targetWeight || '',
+            timeframe: testConfig.timeframe || answers.timeframe || defaults.timeframe || '',
+            sex: testConfig.sex || answers.sex || defaults.sex || '',
+            age: testConfig.age || answers.age || defaults.age || '',
+            height: testConfig.height || answers.height || defaults.height || '',
+            activityLevel: testConfig.activityLevel || answers.activityLevel || defaults.activityLevel || '',
         };
 
-        const apiKey = finalAnswers.apiKey || process.env.OPENROUTER_API_KEY;
-        if (!apiKey) throw new Error('No API key provided');
+        // Get API key from multiple sources (priority order)
+        const apiKey = globalConfig.apiKey || finalAnswers.apiKey || process.env.OPENROUTER_API_KEY;
+
+        if (!apiKey) {
+            console.error(chalk.red('❌ No API key found!'));
+            console.log(chalk.yellow('Please run "fast-plan setup" to configure your API key.'));
+            console.log(chalk.gray('Or set the OPENROUTER_API_KEY environment variable.'));
+            process.exit(1);
+        }
+
+        // If user entered API key manually, offer to save it
+        if (finalAnswers.apiKey && !globalConfig.apiKey) {
+            await promptToSaveApiKey(finalAnswers.apiKey);
+        }
 
         const prompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
 
@@ -175,8 +551,8 @@ program
         const openrouterProvider = createOpenRouter({
             apiKey: apiKey,
             headers: {
-                'HTTP-Referer': process.env.APP_URL || 'https://github.com/your-username/ai-fasting-planner', // Your app's URL
-                'X-Title': process.env.APP_TITLE || 'AI Fasting Planner', // Your app's display name
+                'HTTP-Referer': globalConfig.appUrl || process.env.APP_URL || 'https://github.com/your-username/ai-fasting-planner',
+                'X-Title': globalConfig.appTitle || process.env.APP_TITLE || 'AI Fasting Planner',
             },
         });
 

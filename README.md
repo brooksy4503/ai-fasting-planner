@@ -13,17 +13,27 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 
 ## Quick Start
 
-### 1. First-Time Setup
+### 1. Get Your API Key
 
-```bash
-# 1. Copy the example environment file
-cp .env.example .env.local
+1. Visit [OpenRouter](https://openrouter.ai)
+2. Sign up for a free account  
+3. Get your API key from the dashboard
 
-# 2. Edit .env.local and add your OpenRouter API key
-# OPENROUTER_API_KEY=your_actual_api_key_here
-```
+You'll be prompted for this key when you run the CLI, or you can set it as an environment variable (see Configuration section below).
 
 ### 2. Installation
+
+#### Option A: Install from npm (Recommended for end users)
+
+```bash
+# Install globally
+npm install -g ai-fasting-planner
+
+# Or use without installing
+npx ai-fasting-planner generate
+```
+
+#### Option B: Clone and build (For development)
 
 ```bash
 # Clone or download the project
@@ -36,31 +46,48 @@ npm install
 npm run build
 ```
 
-### 3. Configure Your API Key
+### 3. Configure Your API Key (Optional)
 
-1. Visit [OpenRouter](https://openrouter.ai)
-2. Sign up for a free account
-3. Get your API key from the dashboard
-4. Add it to your `.env.local` file:
+You can either enter your API key when prompted, or set it as an environment variable to avoid entering it each time:
 
 ```bash
-# Edit .env.local file
-OPENROUTER_API_KEY=your_actual_api_key_here
+# Set as environment variable (recommended)
+export OPENROUTER_API_KEY=your_actual_api_key_here
 
 # Optional: Configure app attribution for OpenRouter analytics
-APP_URL=https://github.com/your-username/ai-fasting-planner
-APP_TITLE=AI Fasting Planner
-```
-
-**Alternative**: Set as environment variable:
-```bash
-export OPENROUTER_API_KEY=your_key_here
 export APP_URL=https://github.com/your-username/ai-fasting-planner
 export APP_TITLE="AI Fasting Planner"
 ```
 
+**For development**: Create a `.env.local` file in the project directory:
+```bash
+# .env.local file (development only)
+OPENROUTER_API_KEY=your_actual_api_key_here
+APP_URL=https://github.com/your-username/ai-fasting-planner
+APP_TITLE=AI Fasting Planner
+```
+
 ### 4. Run the CLI
 
+#### If installed globally via npm:
+```bash
+# Run the meal planner
+fast-plan
+
+# Or explicitly use the generate command
+fast-plan generate
+```
+
+#### If using npx (no installation):
+```bash
+# Run the meal planner
+npx ai-fasting-planner
+
+# Or explicitly use the generate command  
+npx ai-fasting-planner generate
+```
+
+#### If cloned for development:
 ```bash
 # Using npm script (development)
 npm start
@@ -106,36 +133,13 @@ Tips from my weight loss:
 - Hydrate on fasting days to stay sharp.
 ```
 
-## Testing
+## Using Configuration Files
 
-For quick testing without manually entering all the prompts, you can use pre-configured JSON files:
+You can skip the interactive prompts by creating a configuration file with your preferences.
 
-### Using Test Configuration Files
+### Creating Your Own Config File
 
-```bash
-# Method 1: Use npm run with -- to pass arguments
-npm run dev -- generate --config test-config.json
-
-# Method 2: Use the built version directly (recommended for testing)
-node dist/index.js generate --config test-config.json
-
-# Method 3: Use ts-node directly
-npx ts-node src/index.ts generate --config test-config.json
-
-# Test with different configurations
-node dist/index.js generate --config test-config-female.json
-node dist/index.js generate --config test-config-minimal.json
-```
-
-### Available Test Configurations
-
-- **`test-config.json`** - Complete male profile (35yr, 200→180 lbs, moderately active)
-- **`test-config-female.json`** - Female profile (28yr, 150→130 lbs, very active)
-- **`test-config-minimal.json`** - Minimal config (only required fields, will prompt for others)
-
-### Creating Custom Test Configs
-
-Create your own JSON file with any combination of these fields:
+Create a JSON file anywhere on your system with any combination of these fields:
 
 ```json
 {
@@ -152,7 +156,66 @@ Create your own JSON file with any combination of these fields:
 }
 ```
 
-**Note**: Any fields not specified in the config file will still prompt you interactively. This allows for partial automation where you only pre-fill the fields you want to test with.
+### Using Your Config File
+
+```bash
+# If installed globally via npm
+fast-plan generate --config /path/to/your-config.json
+
+# Or using npx
+npx ai-fasting-planner generate --config ./my-config.json
+
+# Example with a config file in your home directory
+fast-plan generate --config ~/fasting-config.json
+```
+
+### Config File Options
+
+**Diet Options:**
+- `"Keto"` - Ketogenic diet (default)
+- `"Low-Carb"` - Low carbohydrate diet
+- `"Custom"` - Custom dietary preferences
+
+**Activity Level Options:**
+- `"Sedentary (little to no exercise, <2k steps/day)"`
+- `"Lightly Active (light exercise, 1-3 days/week, 3-5k steps)"`
+- `"Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"`
+- `"Very Active (intense exercise, 6-7 days/week, >10k steps)"`
+
+**Sex Options:**
+- `"Male"`
+- `"Female"`
+- `"Other"`
+
+### Partial Configuration
+
+You don't need to specify all fields! Any fields not included in your config file will still prompt you interactively. This allows you to:
+
+- Pre-fill only the fields that rarely change (like age, height, sex)
+- Create different configs for different goals
+- Share configs with family members who have similar profiles
+
+**Example minimal config:**
+```json
+{
+  "sex": "Female",
+  "age": "28",
+  "height": "5'6\"",
+  "diet": "Keto"
+}
+```
+
+## Development & Testing
+
+For developers working on this project, test configuration files are available in the repository:
+
+```bash
+# Development testing (requires cloned repository)
+npm run dev -- generate --config test-config.json
+node dist/index.js generate --config test-config-female.json
+```
+
+**Note**: Test config files are only available during development and are not included in the npm package.
 
 ## OpenRouter Analytics & Attribution
 
