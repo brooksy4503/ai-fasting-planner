@@ -913,9 +913,63 @@ program
             process.exit(1);
         }
 
-        // If user entered API key manually, offer to save it
+        // Enhanced saving: save both API key and user preferences
         if (finalAnswers.apiKey && !globalConfig.apiKey) {
-            await promptToSaveApiKey(finalAnswers.apiKey);
+            // If user entered API key manually, they probably want to save everything
+            const { saveEverything } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'saveEverything',
+                message: 'Save API key and preferences for future use?',
+                default: true
+            }]);
+
+            if (saveEverything) {
+                const newConfig: GlobalConfig = {
+                    apiKey: finalAnswers.apiKey,
+                    appUrl: globalConfig.appUrl,
+                    appTitle: globalConfig.appTitle,
+                    defaults: {
+                        fastingStart: finalAnswers.fastingStart,
+                        fastingEnd: finalAnswers.fastingEnd,
+                        diet: finalAnswers.diet,
+                        currentWeight: finalAnswers.currentWeight,
+                        targetWeight: finalAnswers.targetWeight,
+                        timeframe: finalAnswers.timeframe,
+                        sex: finalAnswers.sex,
+                        age: finalAnswers.age,
+                        height: finalAnswers.height,
+                        activityLevel: finalAnswers.activityLevel,
+                    }
+                };
+                saveGlobalConfig(newConfig);
+            }
+        } else if (!globalConfig.defaults || Object.keys(globalConfig.defaults).length === 0) {
+            // If API key exists but no defaults, offer to save user preferences
+            const { savePreferences } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'savePreferences',
+                message: 'Save your preferences to skip these questions next time?',
+                default: true
+            }]);
+
+            if (savePreferences) {
+                const updatedConfig = {
+                    ...globalConfig,
+                    defaults: {
+                        fastingStart: finalAnswers.fastingStart,
+                        fastingEnd: finalAnswers.fastingEnd,
+                        diet: finalAnswers.diet,
+                        currentWeight: finalAnswers.currentWeight,
+                        targetWeight: finalAnswers.targetWeight,
+                        timeframe: finalAnswers.timeframe,
+                        sex: finalAnswers.sex,
+                        age: finalAnswers.age,
+                        height: finalAnswers.height,
+                        activityLevel: finalAnswers.activityLevel,
+                    }
+                };
+                saveGlobalConfig(updatedConfig);
+            }
         }
 
         // Use custom prompt template if provided, otherwise use default
