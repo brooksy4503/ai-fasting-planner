@@ -161,6 +161,129 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
         .replace(/\$\{finalAnswers\.diet\}/g, finalAnswers.diet);
 }
 
+function parseMealPlan(aiResponse: string): string[] {
+    const meals: string[] = [];
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    // Split response into lines for processing
+    const lines = aiResponse.split('\n');
+
+    // Try multiple parsing strategies
+
+    // Strategy 1: Look for "### N. DayName" pattern (most detailed format)
+    for (const day of days) {
+        const dayPattern = new RegExp(`###\\s*\\d+\\.\\s*${day}`, 'i');
+        const dayIndex = lines.findIndex(line => dayPattern.test(line));
+
+        if (dayIndex !== -1) {
+            // Find the next day or end of section to get all content for this day
+            const nextDayIndex = lines.findIndex((line, idx) =>
+                idx > dayIndex && /###\s*\d+\.\s*(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)/i.test(line)
+            );
+
+            const endIndex = nextDayIndex !== -1 ? nextDayIndex : lines.length;
+            const dayContent = lines.slice(dayIndex, endIndex).join('\n');
+
+            // Extract meal information from the day's content
+            const mealInfo = extractMealInfo(dayContent);
+            meals.push(mealInfo);
+            continue;
+        }
+    }
+
+    // Strategy 2: Look for simple numbered list "N. DayName:" pattern
+    if (meals.length === 0) {
+        for (const day of days) {
+            const dayPattern = new RegExp(`^\\d+\\.\\s*${day}:?\\s*(.+)`, 'i');
+            const dayLine = lines.find(line => dayPattern.test(line));
+
+            if (dayLine) {
+                const match = dayLine.match(dayPattern);
+                if (match && match[1]) {
+                    meals.push(match[1].trim());
+                }
+            }
+        }
+    }
+
+    // Strategy 3: Look for any line containing day names with meal info
+    if (meals.length === 0) {
+        for (const day of days) {
+            const dayPattern = new RegExp(`${day}[:\\-\\s]+(.+)`, 'i');
+            const dayLine = lines.find(line => dayPattern.test(line) && !line.includes('###'));
+
+            if (dayLine) {
+                const match = dayLine.match(dayPattern);
+                if (match && match[1]) {
+                    meals.push(match[1].trim());
+                }
+            }
+        }
+    }
+
+    return meals;
+}
+
+function extractMealInfo(dayContent: string): string {
+    const lines = dayContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    // Skip the day header line
+    const contentLines = lines.slice(1);
+
+    // Extract breakfast, lunch, dinner information
+    const meals: string[] = [];
+    let currentMeal = '';
+
+    for (const line of contentLines) {
+        // Check if this is a meal header (Breakfast, Lunch, Dinner)
+        if (/^####?\s*(Breakfast|Lunch|Dinner):/i.test(line)) {
+            if (currentMeal) {
+                meals.push(currentMeal.trim());
+            }
+            currentMeal = line.replace(/^####?\s*/i, '').replace(':', '').trim();
+        } else if (line.startsWith('- **') || line.startsWith('**')) {
+            // This is meal details (ingredients, instructions, macros)
+            if (currentMeal) {
+                // Add a brief summary instead of full details for table display
+                if (line.includes('Ingredients')) {
+                    // Skip ingredients for table - too detailed
+                    continue;
+                } else if (line.includes('Instructions')) {
+                    // Skip instructions for table - too detailed  
+                    continue;
+                } else if (line.includes('Macros')) {
+                    // Include macro summary
+                    const macroInfo = line.replace(/^-?\s*\*\*Macros\*\*[^:]*:\s*/i, '');
+                    currentMeal += ` (${macroInfo})`;
+                }
+            }
+        } else if (/^Daily Totals/i.test(line)) {
+            // End of meals for this day
+            break;
+        }
+    }
+
+    // Add the last meal if exists
+    if (currentMeal) {
+        meals.push(currentMeal.trim());
+    }
+
+    // Return combined meal summary or first meal if multiple
+    if (meals.length > 0) {
+        return meals.length === 1 ? meals[0] : `${meals.length} meals: ${meals.join(', ')}`;
+    }
+
+    // Fallback: return first meaningful line after day header
+    const meaningfulLine = contentLines.find(line =>
+        line.length > 10 &&
+        !line.startsWith('#') &&
+        !line.startsWith('**Daily Totals') &&
+        !line.includes('Daily Totals')
+    );
+
+    return meaningfulLine || 'Keto meal (details in full response)';
+}
+
 // Read version from package.json at build time
 const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
@@ -613,8 +736,8 @@ program
             console.log(chalk.gray('📏 Response length:'), mealsText.length);
         }
 
-        // Basic parsing: Extract meals from numbered list (refine on Day 4)
-        const meals = mealsText.split('\n').filter(line => line.match(/^\d+\./)).map(line => line.replace(/^\d+\.\s*/, '').trim());
+        // Enhanced parsing: Extract meals from complex AI response format
+        const meals = parseMealPlan(mealsText);
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         const mealPlan = days.map((day, i) => ({ day, meal: meals[i] || `${day} meal placeholder (keto, home-cooked)` }));
 

@@ -2,6 +2,7 @@
     "promptTemplate": "Generate 6 quick and simple keto meals for the week. Skip Saturday (fasting ${finalAnswers.fastingStart}-${finalAnswers.fastingEnd}). Keep it basic: just meal names, under 20 min prep, keto-friendly. Person details: ${finalAnswers.sex}, ${finalAnswers.age} years old, ${finalAnswers.currentWeight} → ${finalAnswers.targetWeight}. Simple numbered list: 1. Sunday: [meal name], 2. Monday: [meal name], etc.",
     "fastingStart": "Friday 8pm",
     "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
     "currentWeight": "200 lbs",
     "targetWeight": "175 lbs",
     "sex": "Female",
