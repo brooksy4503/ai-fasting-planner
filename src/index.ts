@@ -8,13 +8,41 @@ import os from 'os';
 dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 dotenv.config(); // This loads .env as fallback
 import { Command } from 'commander';
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import { z } from 'zod';
 
 const program = new Command();
+
+// Zod schema for structured meal plan output
+const mealPlanSchema = z.object({
+    days: z.array(z.object({
+        day: z.string(),
+        meals: z.array(z.object({
+            name: z.string(),
+            type: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+            prepTime: z.string().optional(),
+            ingredients: z.array(z.string()).optional(),
+            instructions: z.array(z.string()).optional(),
+            macros: z.object({
+                calories: z.number().optional(),
+                fat: z.number().optional(),
+                protein: z.number().optional(),
+                carbs: z.number().optional()
+            }).optional()
+        }))
+    })),
+    fastingPeriod: z.object({
+        start: z.string(),
+        end: z.string(),
+        skippedDay: z.string()
+    }).optional()
+});
+
+type MealPlan = z.infer<typeof mealPlanSchema>;
 
 interface Config {
     fastingStart: string;
@@ -161,166 +189,45 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
         .replace(/\$\{finalAnswers\.diet\}/g, finalAnswers.diet);
 }
 
-function parseMealPlan(aiResponse: string): string[] {
-    const meals: string[] = [];
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+function formatMealPlanForTable(mealPlan: MealPlan): Array<{ day: string; meal: string }> {
+    const targetDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-    // Split response into lines for processing
-    const lines = aiResponse.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    return targetDays.map(targetDay => {
+        const dayData = mealPlan.days.find(d => d.day.toLowerCase() === targetDay.toLowerCase());
 
-    // Try multiple parsing strategies
-
-    // Strategy 1: Look for "### N. DayName" pattern (most detailed format)
-    for (const day of days) {
-        const dayPattern = new RegExp(`###\\s*\\d+\\.\\s*${day}`, 'i');
-        const dayIndex = lines.findIndex(line => dayPattern.test(line));
-
-        if (dayIndex !== -1) {
-            // Find the next day or end of section to get all content for this day
-            const nextDayIndex = lines.findIndex((line, idx) =>
-                idx > dayIndex && /###\s*\d+\.\s*(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)/i.test(line)
-            );
-
-            const endIndex = nextDayIndex !== -1 ? nextDayIndex : lines.length;
-            const dayContent = lines.slice(dayIndex, endIndex).join('\n');
-
-            // Extract meal information from the day's content
-            const mealInfo = extractMealInfo(dayContent);
-            meals.push(mealInfo);
-            continue;
+        if (!dayData || dayData.meals.length === 0) {
+            return { day: targetDay, meal: `${targetDay} meal (keto, home-cooked)` };
         }
-    }
 
-    // Strategy 2: Look for simple numbered list "N. DayName:" pattern
-    if (meals.length === 0) {
-        for (const day of days) {
-            const dayPattern = new RegExp(`^\\d+\\.\\s*${day}:?\\s*(.+)`, 'i');
-            const dayLine = lines.find(line => dayPattern.test(line));
+        if (dayData.meals.length === 1) {
+            const meal = dayData.meals[0];
+            let mealText = meal.name;
 
-            if (dayLine) {
-                const match = dayLine.match(dayPattern);
-                if (match && match[1]) {
-                    meals.push(match[1].trim());
+            // Add prep time if available
+            if (meal.prepTime) {
+                mealText += ` (${meal.prepTime})`;
+            }
+
+            // Add macros if available
+            if (meal.macros && (meal.macros.calories || meal.macros.fat || meal.macros.protein || meal.macros.carbs)) {
+                const macros = [];
+                if (meal.macros.calories) macros.push(`${meal.macros.calories}cal`);
+                if (meal.macros.fat) macros.push(`${meal.macros.fat}g fat`);
+                if (meal.macros.protein) macros.push(`${meal.macros.protein}g protein`);
+                if (meal.macros.carbs) macros.push(`${meal.macros.carbs}g carbs`);
+
+                if (macros.length > 0) {
+                    mealText += ` | ${macros.join(', ')}`;
                 }
             }
+
+            return { day: targetDay, meal: mealText };
+        } else {
+            // Multiple meals - show count and names
+            const mealNames = dayData.meals.map(m => m.name).join(', ');
+            return { day: targetDay, meal: `${dayData.meals.length} meals: ${mealNames}` };
         }
-    }
-
-    // Strategy 3: Look for any line containing day names with meal info
-    if (meals.length === 0) {
-        for (const day of days) {
-            const dayPattern = new RegExp(`${day}[:\\-\\s]+(.+)`, 'i');
-            const dayLine = lines.find(line => dayPattern.test(line) && !line.includes('###'));
-
-            if (dayLine) {
-                const match = dayLine.match(dayPattern);
-                if (match && match[1]) {
-                    meals.push(match[1].trim());
-                }
-            }
-        }
-    }
-
-    // Strategy 4: More flexible parsing - look for any pattern with day names
-    if (meals.length === 0) {
-        for (const day of days) {
-            // Look for patterns like "1. Sunday", "Sunday:", "Sunday -", etc.
-            const patterns = [
-                new RegExp(`\\d+\\.\\s*${day}[:\\-\\s]*(.*)`, 'i'),
-                new RegExp(`${day}[:\\-]\\s*(.+)`, 'i'),
-                new RegExp(`\\*\\*${day}\\*\\*[:\\-\\s]*(.*)`, 'i'),
-            ];
-
-            for (const pattern of patterns) {
-                const dayLine = lines.find(line => pattern.test(line));
-                if (dayLine) {
-                    const match = dayLine.match(pattern);
-                    if (match && match[1] && match[1].trim().length > 0) {
-                        meals.push(match[1].trim());
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Strategy 5: If all else fails, try to extract any meaningful content for each day
-    if (meals.length === 0) {
-        // Look for any lines that might contain meal information
-        const mealLines = lines.filter(line =>
-            line.length > 20 && // Reasonable length
-            !line.startsWith('#') && // Not a header
-            (line.includes('keto') || line.includes('meal') || line.includes('chicken') ||
-                line.includes('beef') || line.includes('fish') || line.includes('eggs') ||
-                line.includes('salad') || line.includes('vegetables'))
-        );
-
-        // Take up to 6 lines for our 6 days
-        for (let i = 0; i < Math.min(6, mealLines.length); i++) {
-            meals.push(mealLines[i]);
-        }
-    }
-    return meals;
-}
-
-function extractMealInfo(dayContent: string): string {
-    const lines = dayContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-
-    // Skip the day header line
-    const contentLines = lines.slice(1);
-
-    // Extract breakfast, lunch, dinner information
-    const meals: string[] = [];
-    let currentMeal = '';
-
-    for (const line of contentLines) {
-        // Check if this is a meal header (Breakfast, Lunch, Dinner)
-        if (/^####?\s*(Breakfast|Lunch|Dinner):/i.test(line)) {
-            if (currentMeal) {
-                meals.push(currentMeal.trim());
-            }
-            currentMeal = line.replace(/^####?\s*/i, '').replace(':', '').trim();
-        } else if (line.startsWith('- **') || line.startsWith('**')) {
-            // This is meal details (ingredients, instructions, macros)
-            if (currentMeal) {
-                // Add a brief summary instead of full details for table display
-                if (line.includes('Ingredients')) {
-                    // Skip ingredients for table - too detailed
-                    continue;
-                } else if (line.includes('Instructions')) {
-                    // Skip instructions for table - too detailed  
-                    continue;
-                } else if (line.includes('Macros')) {
-                    // Include macro summary
-                    const macroInfo = line.replace(/^-?\s*\*\*Macros\*\*[^:]*:\s*/i, '');
-                    currentMeal += ` (${macroInfo})`;
-                }
-            }
-        } else if (/^Daily Totals/i.test(line)) {
-            // End of meals for this day
-            break;
-        }
-    }
-
-    // Add the last meal if exists
-    if (currentMeal) {
-        meals.push(currentMeal.trim());
-    }
-
-    // Return combined meal summary or first meal if multiple
-    if (meals.length > 0) {
-        return meals.length === 1 ? meals[0] : `${meals.length} meals: ${meals.join(', ')}`;
-    }
-
-    // Fallback: return first meaningful line after day header
-    const meaningfulLine = contentLines.find(line =>
-        line.length > 10 &&
-        !line.startsWith('#') &&
-        !line.startsWith('**Daily Totals') &&
-        !line.includes('Daily Totals')
-    );
-
-    return meaningfulLine || 'Keto meal (details in full response)';
+    });
 }
 
 // Read version from package.json at build time
@@ -754,7 +661,19 @@ program
         }
 
         // Use custom prompt template if provided, otherwise use default
-        const defaultPrompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (Friday 8pm-Sunday 8am). Meals: home-cooked, <30 mins prep, no junk (pies, sausage rolls, sugary drinks), low/no carbs, no sugars. Inspired by my weight loss: intentional home-cooked meals, cut calories, coffee with milk during fasts. Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, ${finalAnswers.activityLevel}. Output as a numbered list: 1. Sunday: [meal], 2. Monday: [meal], etc.`;
+        const defaultPrompt = `Generate 6 keto meals for a week, skipping Saturday due to 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). 
+
+Requirements:
+- Home-cooked meals, under 30 minutes prep time
+- No junk food (pies, sausage rolls, sugary drinks)
+- Low/no carbs, no sugars, keto-friendly
+- Inspired by intentional home-cooked meals for weight loss
+
+Tailor to: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}.
+
+Provide meals for: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday (skip Saturday for fasting).
+
+For each day, you can provide 1-3 meals (breakfast, lunch, dinner) as appropriate. Include meal names, optional prep time, and optional basic macros if available.`;
 
         const prompt = testConfig.promptTemplate
             ? evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers)
@@ -782,29 +701,27 @@ program
             },
         });
 
-        const { text: mealsText } = await generateText({
+        const { object: mealPlan } = await generateObject({
             model: openrouterProvider('x-ai/grok-4-fast'),
             prompt,
+            schema: mealPlanSchema,
         });
 
         // Debug: Log AI response for troubleshooting
         if (process.env.DEBUG_PROMPT || testConfig.promptTemplate) {
-            console.log(chalk.gray('🤖 AI Response:'), mealsText);
-            console.log(chalk.gray('📏 Response length:'), mealsText.length);
+            console.log(chalk.gray('🤖 AI Response:'), JSON.stringify(mealPlan, null, 2));
+            console.log(chalk.gray('📊 Days generated:'), mealPlan.days.length);
         }
 
-        // Enhanced parsing: Extract meals from complex AI response format
-        const meals = parseMealPlan(mealsText);
-
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        const mealPlan = days.map((day, i) => ({ day, meal: meals[i] || `${day} meal placeholder (keto, home-cooked)` }));
+        // Format structured data for table display
+        const mealPlanForTable = formatMealPlanForTable(mealPlan);
 
         const table = new Table({
             head: [chalk.cyan('Day'), chalk.cyan('Meal')],
             colWidths: [12, 80], // Set fixed column widths
             wordWrap: true // Enable word wrapping
         });
-        mealPlan.forEach(({ day, meal }) => table.push([day, meal]));
+        mealPlanForTable.forEach(({ day, meal }) => table.push([day, meal]));
         console.log(chalk.green(`Your Keto Meal Plan (Fasting: ${finalAnswers.fastingStart} - ${finalAnswers.fastingEnd})`));
         console.log(table.toString());
 
