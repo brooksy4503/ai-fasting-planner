@@ -217,6 +217,68 @@ node dist/index.js generate --config test-config-female.json
 
 **Note**: Test config files are only available during development and are not included in the npm package.
 
+### Prompt Template Testing
+
+The project includes a powerful prompt template system for testing different AI prompt variations during development. This allows you to quickly experiment with different prompt styles without modifying code.
+
+```bash
+# Test different prompt templates
+fast-plan generate -c test-prompt-detailed.json  # Detailed with cooking instructions
+fast-plan generate -c test-prompt-simple.json    # Quick meal names only
+fast-plan generate -c test-prompt-budget.json    # Budget-friendly focus
+```
+
+#### Creating Custom Prompt Templates
+
+Create a JSON file with a `promptTemplate` field that supports variable substitution:
+
+```json
+{
+    "promptTemplate": "Your custom prompt with ${finalAnswers.sex}, ${finalAnswers.age} variables...",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}
+```
+
+#### Available Template Variables
+
+- `${finalAnswers.sex}` - Male/Female/Other
+- `${finalAnswers.age}` - Age in years  
+- `${finalAnswers.height}` - Height (e.g., "5'10\"")
+- `${finalAnswers.currentWeight}` - Current weight (e.g., "180 lbs")
+- `${finalAnswers.targetWeight}` - Target weight (e.g., "160 lbs")
+- `${finalAnswers.timeframe}` - Time to reach goal (e.g., "6 months")
+- `${finalAnswers.activityLevel}` - Activity level description
+- `${finalAnswers.fastingStart}` - Fasting start time (e.g., "Friday 8pm")
+- `${finalAnswers.fastingEnd}` - Fasting end time (e.g., "Sunday 8am")
+- `${finalAnswers.diet}` - Diet type (Keto/Low-Carb/Custom)
+
+#### Debug Logging
+
+When using custom prompt templates, debug information is automatically displayed:
+
+```
+🧪 Using custom prompt template from config
+📋 Final answers: { sex: 'Male', age: '35', ... }
+📝 Raw template: Your custom prompt with ${finalAnswers.sex}...
+🔄 Evaluated prompt: Your custom prompt with Male...
+```
+
+For default prompts, enable debug logging with:
+```bash
+DEBUG_PROMPT=1 fast-plan generate
+```
+
+See [PROMPT_TEMPLATES.md](PROMPT_TEMPLATES.md) for complete documentation.
+
 ## OpenRouter Analytics & Attribution
 
 This app includes OpenRouter app attribution to track usage analytics and appear in OpenRouter's public rankings. This helps monitor API usage patterns and showcases the app to the OpenRouter developer community.
