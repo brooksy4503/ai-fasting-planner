@@ -10,6 +10,7 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 - 🚫 **No junk food** - Avoids pies, sausage rolls, sugary drinks, and processed foods
 - ☕ **Fasting-friendly** - Includes tips for coffee with milk during fasting periods
 - 🤖 **AI-powered** - Uses xAI's Grok-4-Fast model via OpenRouter for intelligent meal suggestions
+- 🎮 **Interactive waiting experience** - Enjoy animations, mini-games, and educational content while your meal plan generates
 
 ## Quick Start
 
@@ -110,6 +111,7 @@ The CLI will prompt you for:
 - **Timeframe** (e.g., 6 months)
 - **Personal details** (sex, age, height)
 - **Activity level** (Sedentary to Very Active)
+- **Waiting experience** (Choose from animations, games, or educational content)
 - **OpenRouter API Key** (if not set as environment variable)
 
 ### Example Output
@@ -132,6 +134,59 @@ Tips from my weight loss:
 - Coffee with milk kept me going during 36-hour fasts.
 - Hydrate on fasting days to stay sharp.
 ```
+
+## 🎮 Interactive Waiting Experience
+
+While your AI chef prepares your personalized meal plan, enjoy these fun and educational experiences:
+
+### 🎨 Available Experiences
+
+- **🍳 Cooking Animation** - Watch your AI chef in action with animated cooking steps
+- **⏰ Fasting Clock** - Animated clock faces showing meal planning progress
+- **🔄 Food Transformation** - See ingredients transform into delicious meals
+- **🌀 Spinner** - Clean, modern loading spinner with progress messages
+- **🧠 Keto Quiz** - Test your nutrition knowledge with 4 interactive questions
+- **🔤 Word Scramble** - Unscramble nutrition and fasting terms
+- **📚 Nutrition Facts** - Learn fascinating facts about keto and fasting
+- **🎲 Random** - Let the app surprise you with a random experience!
+
+### 🚀 How It Works
+
+When you run `fast-plan generate`, you'll be prompted to choose your waiting experience:
+
+```
+While your AI chef prepares your meal plan, what would you like to do?
+❯ 🎲 Surprise me! (Random experience)
+  🍳 Watch the cooking animation
+  🧠 Play keto knowledge quiz
+  🔤 Word scramble game
+  📚 Learn nutrition facts
+  ⏰ See the fasting clock
+  🔄 Food transformation animation
+  🌀 Simple loading spinner
+```
+
+### 🎬 Demo
+
+Want to see all animations in action? Run the demo:
+
+```bash
+# If installed globally
+node demos/demo-animations.mjs
+
+# If cloned for development
+node demos/demo-animations.js
+```
+
+### 🎯 Features
+
+- **Interactive Games**: Quiz and word scramble keep you engaged
+- **Educational**: Learn about keto and fasting while you wait
+- **Non-blocking**: Animations don't slow down meal plan generation
+- **Terminal-safe**: Works in all terminal environments
+- **Smart timing**: Games play before API calls, animations during
+
+For complete details about all available animations and games, see [WAITING_ANIMATIONS.md](docs/WAITING_ANIMATIONS.md).
 
 ## Using Configuration Files
 
@@ -331,15 +386,26 @@ npm start -- --help
 ```
 ai-fasting-planner/
 ├── src/
-│   └── index.ts          # Main CLI application
+│   ├── index.ts          # Main CLI application
+│   ├── animations.ts     # Loading animations and mini-games
+│   └── waitingExperience.ts # Waiting experience orchestration
 ├── dist/
-│   └── index.js          # Built JavaScript (after npm run build)
+│   ├── index.js          # Built JavaScript (after npm run build)
+│   ├── animations.js     # Built animations
+│   └── waitingExperience.js # Built waiting experience
+├── demos/
+│   ├── demo-animations.js    # Animation demo (CommonJS)
+│   └── demo-animations.mjs   # Animation demo (ES modules)
+├── docs/
+│   ├── README.md         # This file
+│   ├── PROMPT_TEMPLATES.md # Prompt template documentation
+│   └── WAITING_ANIMATIONS.md # Detailed animation documentation
 ├── .env.local           # Your API keys and config (create this)
 ├── .env.example         # Example environment file
 ├── .gitignore           # Git ignore rules
 ├── package.json         # Dependencies and scripts
 ├── tsconfig.json        # TypeScript configuration
-└── README.md           # This file
+└── test-*.json         # Test configuration files
 ```
 
 ## Troubleshooting
