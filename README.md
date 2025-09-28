@@ -9,7 +9,7 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 - 🎯 **Personalized recommendations** - Tailored to your weight, height, age, sex, and activity level
 - 🚫 **No junk food** - Avoids pies, sausage rolls, sugary drinks, and processed foods
 - ☕ **Fasting-friendly** - Includes tips for coffee with milk during fasting periods
-- 🤖 **AI-powered** - Uses xAI's Grok-4-Fast model via OpenRouter for intelligent meal suggestions
+- 🤖 **AI-powered** - Choose from multiple AI models via OpenRouter (Grok-4, GPT-4o, Claude, Llama, etc.)
 - 🎮 **Interactive waiting experience** - Enjoy animations, mini-games, and educational content while your meal plan generates
 
 ## Quick Start
@@ -133,6 +133,47 @@ Tips from my weight loss:
 - Ditched pies & sugary drinks—home-cooked meals were my win.
 - Coffee with milk kept me going during 36-hour fasts.
 - Hydrate on fasting days to stay sharp.
+```
+
+### AI Model Selection
+
+The app supports multiple AI models via OpenRouter. You can choose your preferred model during setup or override it per generation:
+
+#### Available Models
+
+- **x-ai/grok-4-fast** - Fast, good quality (default)
+- **x-ai/grok-4** - High quality, slower
+- **openai/gpt-4o** - Excellent quality
+- **openai/gpt-4o-mini** - Fast, good quality
+- **anthropic/claude-3.5-sonnet** - High quality
+- **anthropic/claude-3.5-haiku** - Fast, good quality
+- **google/gemini-pro-1.5** - Good quality
+- **meta-llama/llama-3.1-405b-instruct** - High quality
+- **meta-llama/llama-3.1-70b-instruct** - Good quality
+- **mistralai/mistral-7b-instruct** - Fast, cost-effective
+
+#### Setting Your Default Model
+
+```bash
+# Run setup to choose your default model
+fast-plan setup
+```
+
+#### Override Model Per Generation
+
+```bash
+# Use a specific model for this generation
+fast-plan generate --model openai/gpt-4o
+
+# Use a different model with custom config
+fast-plan generate --config my-config.json --model anthropic/claude-3.5-sonnet
+```
+
+#### View Current Configuration
+
+```bash
+# See your current settings including default model
+fast-plan config --show
 ```
 
 ## 🎮 Interactive Waiting Experience

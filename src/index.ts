@@ -45,6 +45,12 @@ const mealPlanSchema = z.object({
 
 type MealPlan = z.infer<typeof mealPlanSchema>;
 
+// OpenRouter models that support structured output well
+const OPENROUTER_MODELS = [
+    { name: 'x-ai/grok-4-fast', description: 'Grok-4 Fast (Fast, good quality, structured output)' },
+    { name: 'openai/gpt-5-nano', description: 'GPT-5 Nano (Fast, excellent structured output)' }
+];
+
 interface Config {
     fastingStart: string;
     fastingEnd: string;
@@ -77,6 +83,7 @@ interface GlobalConfig {
     apiKey?: string;
     appUrl?: string;
     appTitle?: string;
+    defaultModel?: string;
     defaults?: {
         fastingStart?: string;
         fastingEnd?: string;
@@ -173,6 +180,40 @@ function clearGlobalConfig(): void {
         console.error(chalk.red('❌ Error clearing configuration'));
         console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
     }
+}
+
+function validateModel(model: string): boolean {
+    // Check if model is in our predefined list
+    const isValidModel = OPENROUTER_MODELS.some(m => m.name === model);
+    if (isValidModel) {
+        return true;
+    }
+
+    // Allow custom models that follow OpenRouter naming pattern (provider/model)
+    const openRouterPattern = /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/;
+    return openRouterPattern.test(model);
+}
+
+function getSelectedModel(globalConfig: GlobalConfig, cliModel?: string): string {
+    // Priority: CLI flag > global config > default
+    if (cliModel) {
+        if (!validateModel(cliModel)) {
+            console.error(chalk.red(`❌ Invalid model: ${cliModel}`));
+            console.log(chalk.yellow('Available models:'));
+            OPENROUTER_MODELS.forEach(model => {
+                console.log(chalk.gray(`  ${model.name} - ${model.description}`));
+            });
+            process.exit(1);
+        }
+        return cliModel;
+    }
+
+    if (globalConfig.defaultModel) {
+        return globalConfig.defaultModel;
+    }
+
+    // Fallback to default
+    return 'x-ai/grok-4-fast';
 }
 
 function evaluatePromptTemplate(template: string, finalAnswers: Config): string {
@@ -520,6 +561,18 @@ program
             }
         }]);
 
+        // Model selection
+        const { defaultModel } = await inquirer.prompt([{
+            type: 'list',
+            name: 'defaultModel',
+            message: 'Choose your default AI model:',
+            choices: OPENROUTER_MODELS.map(model => ({
+                name: `${model.name} - ${model.description}`,
+                value: model.name
+            })),
+            default: globalConfig.defaultModel || 'x-ai/grok-4-fast'
+        }]);
+
         // App attribution setup
         const { setupAttribution } = await inquirer.prompt([{
             type: 'confirm',
@@ -649,6 +702,7 @@ program
             apiKey,
             appUrl,
             appTitle,
+            defaultModel,
             defaults
         };
 
@@ -710,6 +764,17 @@ program
                 console.log(chalk.green(`✅ API Key: ${maskedKey}`));
             } else {
                 console.log(chalk.red('❌ API Key: Not set'));
+            }
+
+            // Show default model
+            if (globalConfig.defaultModel) {
+                const modelInfo = OPENROUTER_MODELS.find(m => m.name === globalConfig.defaultModel);
+                const modelDisplay = modelInfo
+                    ? `${globalConfig.defaultModel} - ${modelInfo.description}`
+                    : globalConfig.defaultModel;
+                console.log(chalk.cyan(`🤖 Default Model: ${modelDisplay}`));
+            } else {
+                console.log(chalk.yellow('⚠️  Default Model: Not set (using x-ai/grok-4-fast)'));
             }
 
             // Show app attribution
@@ -781,6 +846,7 @@ program
     .command('generate')
     .description('Generate keto meal plan for 36-hour fasting')
     .option('-c, --config <path>', 'Path to meal plan configuration JSON file')
+    .option('-m, --model <model>', 'Override the default AI model (e.g., openai/gpt-4o)')
     .action(async (options) => {
         // Load global configuration
         const globalConfig = loadGlobalConfig();
@@ -897,6 +963,9 @@ program
         // Get API key from multiple sources (priority order)
         const apiKey = globalConfig.apiKey || finalAnswers.apiKey || process.env.OPENROUTER_API_KEY;
 
+        // Get selected model
+        const selectedModel = getSelectedModel(globalConfig, options.model);
+
         // Debug API key loading
         if (process.env.DEBUG_PROMPT || testConfig.promptTemplate) {
             console.log(chalk.gray('🔑 API Key sources:'));
@@ -904,6 +973,7 @@ program
             console.log(chalk.gray('   finalAnswers.apiKey:'), finalAnswers.apiKey ? 'SET' : 'NOT SET');
             console.log(chalk.gray('   process.env.OPENROUTER_API_KEY:'), process.env.OPENROUTER_API_KEY ? 'SET' : 'NOT SET');
             console.log(chalk.gray('   Final apiKey:'), apiKey ? 'SET' : 'NOT SET');
+            console.log(chalk.gray('🤖 Selected model:'), selectedModel);
         }
 
         if (!apiKey) {
@@ -1001,18 +1071,22 @@ program
             },
         });
 
-        // Ask user what they want to do while waiting
-        const experienceType = await WaitingExperience.chooseExperience();
+        // Show which model is being used
+        const modelInfo = OPENROUTER_MODELS.find(m => m.name === selectedModel);
+        const modelDisplay = modelInfo
+            ? `${selectedModel} - ${modelInfo.description}`
+            : selectedModel;
+        console.log(chalk.blue(`🤖 Using AI model: ${modelDisplay}`));
 
-        // Generate meal plan with waiting experience
-        const { object: mealPlan } = await WaitingExperience.handleWaitingPeriod(
-            () => generateObject({
-                model: openrouterProvider('x-ai/grok-4-fast'),
-                prompt,
-                schema: mealPlanSchema,
-            }),
-            experienceType
-        );
+        // Temporarily disable waiting experience for testing
+        console.log(chalk.blue('🤖 Generating your meal plan...'));
+
+        // Generate meal plan directly without waiting experience
+        const { object: mealPlan } = await generateObject({
+            model: openrouterProvider(selectedModel),
+            prompt,
+            schema: mealPlanSchema,
+        });
 
         // Debug: Log AI response for troubleshooting
         if (process.env.DEBUG_PROMPT || testConfig.promptTemplate) {
@@ -1034,7 +1108,7 @@ program
 
         const tips = [
             'Ditched pies & sugary drinks—home-cooked meals were my win.',
-            'Coffee with milk kept me going during 36-hour fasts.',
+            'Coffee kept me going during 36-hour fasts.',
             'Hydrate on fasting days to stay sharp.',
         ];
         console.log(chalk.blue('Tips from my weight loss:'));

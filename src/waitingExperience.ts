@@ -111,8 +111,8 @@ export class WaitingExperience {
             await new Promise(resolve => setTimeout(resolve, 1000));
             return result;
         } else {
-            // Start animation
-            await experience.start(experienceType);
+            // Start animation (non-interactive animations don't need await)
+            experience.start(experienceType);
 
             // Wait for the operation to complete
             const result = await operationPromise;
