@@ -416,6 +416,24 @@ program
                         'Very Active (intense exercise, 6-7 days/week, >10k steps)',
                     ],
                     default: defaults.activityLevel || 'Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)'
+                },
+                {
+                    type: 'input',
+                    name: 'currentWeight',
+                    message: 'Current weight (e.g., 200 lbs or 90 kg):',
+                    default: defaults.currentWeight
+                },
+                {
+                    type: 'input',
+                    name: 'targetWeight',
+                    message: 'Target weight (e.g., 180 lbs or 80 kg):',
+                    default: defaults.targetWeight
+                },
+                {
+                    type: 'input',
+                    name: 'timeframe',
+                    message: 'Timeframe to reach target (e.g., 6 months):',
+                    default: defaults.timeframe
                 }
             ]);
 
