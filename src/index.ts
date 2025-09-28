@@ -164,7 +164,7 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
 program
     .name('fast-plan')
     .description('AI-powered keto meal planner with 36-hour fasting support')
-    .version('1.3.2');
+    .version('1.3.3');
 
 // Setup command for initial configuration
 program
