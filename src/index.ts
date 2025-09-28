@@ -576,14 +576,14 @@ program
                 name: 'fastingStart',
                 message: 'Fasting start?',
                 default: testConfig.fastingStart || defaults.fastingStart || 'Friday 8pm',
-                when: () => !testConfig.fastingStart
+                when: () => !testConfig.fastingStart && !defaults.fastingStart
             },
             {
                 type: 'input',
                 name: 'fastingEnd',
                 message: 'Fasting end?',
                 default: testConfig.fastingEnd || defaults.fastingEnd || 'Sunday 8am',
-                when: () => !testConfig.fastingEnd
+                when: () => !testConfig.fastingEnd && !defaults.fastingEnd
             },
             {
                 type: 'list',
@@ -591,7 +591,7 @@ program
                 message: 'Diet?',
                 choices: ['Keto', 'Low-Carb', 'Custom'],
                 default: testConfig.diet || defaults.diet || 'Keto',
-                when: () => !testConfig.diet
+                when: () => !testConfig.diet && !defaults.diet
             },
             {
                 type: 'password',
@@ -604,21 +604,21 @@ program
                 name: 'currentWeight',
                 message: 'Current weight (e.g., 200 lbs)?',
                 default: testConfig.currentWeight || defaults.currentWeight,
-                when: () => !testConfig.currentWeight
+                when: () => !testConfig.currentWeight && !defaults.currentWeight
             },
             {
                 type: 'input',
                 name: 'targetWeight',
                 message: 'Target weight (e.g., 180 lbs)?',
                 default: testConfig.targetWeight || defaults.targetWeight,
-                when: () => !testConfig.targetWeight
+                when: () => !testConfig.targetWeight && !defaults.targetWeight
             },
             {
                 type: 'input',
                 name: 'timeframe',
                 message: 'Timeframe to reach target (e.g., 6 months)?',
                 default: testConfig.timeframe || defaults.timeframe,
-                when: () => !testConfig.timeframe
+                when: () => !testConfig.timeframe && !defaults.timeframe
             },
             {
                 type: 'list',
@@ -626,21 +626,21 @@ program
                 message: 'Sex?',
                 choices: ['Male', 'Female', 'Other'],
                 default: testConfig.sex || defaults.sex,
-                when: () => !testConfig.sex
+                when: () => !testConfig.sex && !defaults.sex
             },
             {
                 type: 'input',
                 name: 'age',
                 message: 'Age (e.g., 35)?',
                 default: testConfig.age || defaults.age,
-                when: () => !testConfig.age
+                when: () => !testConfig.age && !defaults.age
             },
             {
                 type: 'input',
                 name: 'height',
                 message: 'Height (e.g., 5\'10" or 178 cm)?',
                 default: testConfig.height || defaults.height,
-                when: () => !testConfig.height
+                when: () => !testConfig.height && !defaults.height
             },
             {
                 type: 'list',
@@ -653,7 +653,7 @@ program
                     'Very Active (intense exercise, 6-7 days/week, >10k steps)',
                 ],
                 default: testConfig.activityLevel || defaults.activityLevel,
-                when: () => !testConfig.activityLevel
+                when: () => !testConfig.activityLevel && !defaults.activityLevel
             },
         ]);
 
