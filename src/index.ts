@@ -230,6 +230,263 @@ function formatMealPlanForTable(mealPlan: MealPlan): Array<{ day: string; meal: 
     });
 }
 
+async function showDetailedMealPlan(mealPlan: MealPlan): Promise<void> {
+    console.log(chalk.cyan('\n🔍 Want to see detailed recipes and instructions?'));
+
+    const { viewDetails } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'viewDetails',
+        message: 'View detailed meal information?',
+        default: true
+    }]);
+
+    if (!viewDetails) {
+        console.log(chalk.gray('Detailed view skipped. Your meal plan is ready!'));
+        return;
+    }
+
+    let continueViewing = true;
+
+    while (continueViewing) {
+        // Create menu choices for available days
+        const dayChoices = mealPlan.days.map(day => ({
+            name: `${day.day} (${day.meals.length} meals)`,
+            value: day.day
+        }));
+
+        dayChoices.push(
+            { name: '📄 Export full meal plan', value: 'export' },
+            { name: '❌ Exit detailed view', value: 'exit' }
+        );
+
+        const { selectedAction } = await inquirer.prompt([{
+            type: 'list',
+            name: 'selectedAction',
+            message: 'What would you like to view?',
+            choices: dayChoices
+        }]);
+
+        if (selectedAction === 'exit') {
+            continueViewing = false;
+            console.log(chalk.green('Happy cooking! 🍳'));
+            break;
+        }
+
+        if (selectedAction === 'export') {
+            await exportMealPlan(mealPlan);
+            continue;
+        }
+
+        // Show detailed day view
+        await showDayDetails(mealPlan, selectedAction);
+    }
+}
+
+async function showDayDetails(mealPlan: MealPlan, selectedDay: string): Promise<void> {
+    const dayData = mealPlan.days.find(d => d.day.toLowerCase() === selectedDay.toLowerCase());
+
+    if (!dayData) {
+        console.log(chalk.red('Day not found in meal plan.'));
+        return;
+    }
+
+    console.log(chalk.green(`\n📅 ${dayData.day} Meal Plan`));
+    console.log(chalk.gray('─'.repeat(50)));
+
+    dayData.meals.forEach((meal, index) => {
+        console.log(chalk.cyan(`\n${index + 1}. ${meal.name}`));
+
+        if (meal.type) {
+            console.log(chalk.gray(`   Type: ${meal.type.charAt(0).toUpperCase() + meal.type.slice(1)}`));
+        }
+
+        if (meal.prepTime) {
+            console.log(chalk.gray(`   Prep Time: ${meal.prepTime}`));
+        }
+
+        // Show macros if available
+        if (meal.macros) {
+            const macroItems = [];
+            if (meal.macros.calories) macroItems.push(`${meal.macros.calories} cal`);
+            if (meal.macros.fat) macroItems.push(`${meal.macros.fat}g fat`);
+            if (meal.macros.protein) macroItems.push(`${meal.macros.protein}g protein`);
+            if (meal.macros.carbs) macroItems.push(`${meal.macros.carbs}g carbs`);
+
+            if (macroItems.length > 0) {
+                console.log(chalk.yellow(`   Macros: ${macroItems.join(' | ')}`));
+            }
+        }
+
+        // Show ingredients if available
+        if (meal.ingredients && meal.ingredients.length > 0) {
+            console.log(chalk.blue('\n   Ingredients:'));
+            meal.ingredients.forEach(ingredient => {
+                console.log(chalk.gray(`   • ${ingredient}`));
+            });
+        }
+
+        // Show instructions if available
+        if (meal.instructions && meal.instructions.length > 0) {
+            console.log(chalk.blue('\n   Instructions:'));
+            meal.instructions.forEach((instruction, stepIndex) => {
+                console.log(chalk.gray(`   ${stepIndex + 1}. ${instruction}`));
+            });
+        }
+
+        console.log(''); // Add spacing between meals
+    });
+
+    // Show daily totals if we can calculate them
+    const dailyTotals = calculateDailyTotals(dayData.meals);
+    if (dailyTotals.hasData) {
+        console.log(chalk.green('📊 Daily Totals:'));
+        console.log(chalk.gray(`   Calories: ${dailyTotals.calories} | Fat: ${dailyTotals.fat}g | Protein: ${dailyTotals.protein}g | Carbs: ${dailyTotals.carbs}g`));
+    }
+}
+
+function calculateDailyTotals(meals: any[]): { hasData: boolean; calories: number; fat: number; protein: number; carbs: number } {
+    const totals = { hasData: false, calories: 0, fat: 0, protein: 0, carbs: 0 };
+
+    meals.forEach(meal => {
+        if (meal.macros) {
+            totals.hasData = true;
+            totals.calories += meal.macros.calories || 0;
+            totals.fat += meal.macros.fat || 0;
+            totals.protein += meal.macros.protein || 0;
+            totals.carbs += meal.macros.carbs || 0;
+        }
+    });
+
+    return totals;
+}
+
+async function exportMealPlan(mealPlan: MealPlan): Promise<void> {
+    const { exportFormat } = await inquirer.prompt([{
+        type: 'list',
+        name: 'exportFormat',
+        message: 'Choose export format:',
+        choices: [
+            { name: '📄 Detailed Text Format', value: 'text' },
+            { name: '📋 JSON Format', value: 'json' },
+            { name: '🛒 Shopping List', value: 'shopping' },
+            { name: '❌ Cancel', value: 'cancel' }
+        ]
+    }]);
+
+    if (exportFormat === 'cancel') {
+        return;
+    }
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    let filename = '';
+    let content = '';
+
+    switch (exportFormat) {
+        case 'text':
+            filename = `meal-plan-${timestamp}.txt`;
+            content = generateTextExport(mealPlan);
+            break;
+        case 'json':
+            filename = `meal-plan-${timestamp}.json`;
+            content = JSON.stringify(mealPlan, null, 2);
+            break;
+        case 'shopping':
+            filename = `shopping-list-${timestamp}.txt`;
+            content = generateShoppingList(mealPlan);
+            break;
+    }
+
+    try {
+        fs.writeFileSync(filename, content);
+        console.log(chalk.green(`✅ Exported to: ${filename}`));
+    } catch (error) {
+        console.error(chalk.red(`❌ Error writing file: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    }
+}
+
+function generateTextExport(mealPlan: MealPlan): string {
+    let output = `KETO MEAL PLAN\n`;
+    if (mealPlan.fastingPeriod) {
+        output += `Fasting Period: ${mealPlan.fastingPeriod.start} - ${mealPlan.fastingPeriod.end}\n`;
+        output += `Skipped Day: ${mealPlan.fastingPeriod.skippedDay}\n`;
+    }
+    output += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+    output += '='.repeat(50) + '\n\n';
+
+    mealPlan.days.forEach(day => {
+        output += `${day.day.toUpperCase()}\n`;
+        output += '-'.repeat(day.day.length) + '\n\n';
+
+        day.meals.forEach((meal, index) => {
+            output += `${index + 1}. ${meal.name}\n`;
+
+            if (meal.type) output += `   Type: ${meal.type}\n`;
+            if (meal.prepTime) output += `   Prep Time: ${meal.prepTime}\n`;
+
+            if (meal.macros) {
+                const macros = [];
+                if (meal.macros.calories) macros.push(`${meal.macros.calories} cal`);
+                if (meal.macros.fat) macros.push(`${meal.macros.fat}g fat`);
+                if (meal.macros.protein) macros.push(`${meal.macros.protein}g protein`);
+                if (meal.macros.carbs) macros.push(`${meal.macros.carbs}g carbs`);
+                if (macros.length > 0) output += `   Macros: ${macros.join(' | ')}\n`;
+            }
+
+            if (meal.ingredients && meal.ingredients.length > 0) {
+                output += '\n   Ingredients:\n';
+                meal.ingredients.forEach(ingredient => {
+                    output += `   • ${ingredient}\n`;
+                });
+            }
+
+            if (meal.instructions && meal.instructions.length > 0) {
+                output += '\n   Instructions:\n';
+                meal.instructions.forEach((instruction, stepIndex) => {
+                    output += `   ${stepIndex + 1}. ${instruction}\n`;
+                });
+            }
+
+            output += '\n';
+        });
+
+        output += '\n';
+    });
+
+    return output;
+}
+
+function generateShoppingList(mealPlan: MealPlan): string {
+    const ingredients = new Set<string>();
+
+    mealPlan.days.forEach(day => {
+        day.meals.forEach(meal => {
+            if (meal.ingredients) {
+                meal.ingredients.forEach(ingredient => {
+                    // Clean up ingredient text (remove quantities for grouping similar items)
+                    const cleanIngredient = ingredient.toLowerCase().trim();
+                    ingredients.add(cleanIngredient);
+                });
+            }
+        });
+    });
+
+    let output = `SHOPPING LIST\n`;
+    if (mealPlan.fastingPeriod) {
+        output += `For meal plan: ${mealPlan.fastingPeriod.start} - ${mealPlan.fastingPeriod.end}\n`;
+    }
+    output += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+    output += '='.repeat(30) + '\n\n';
+
+    const sortedIngredients = Array.from(ingredients).sort();
+    sortedIngredients.forEach(ingredient => {
+        output += `☐ ${ingredient}\n`;
+    });
+
+    output += '\n\nNote: Check quantities in the detailed meal plan and adjust as needed.\n';
+
+    return output;
+}
+
 // Read version from package.json at build time
 const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
@@ -732,6 +989,9 @@ For each day, you can provide 1-3 meals (breakfast, lunch, dinner) as appropriat
         ];
         console.log(chalk.blue('Tips from my weight loss:'));
         tips.forEach(tip => console.log(`- ${tip}`));
+
+        // Interactive detailed view
+        await showDetailedMealPlan(mealPlan);
     });
 
 // Make generate the default command if no command is specified
