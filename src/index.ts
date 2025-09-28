@@ -166,7 +166,7 @@ function parseMealPlan(aiResponse: string): string[] {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
     // Split response into lines for processing
-    const lines = aiResponse.split('\n');
+    const lines = aiResponse.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
     // Try multiple parsing strategies
 
@@ -221,6 +221,45 @@ function parseMealPlan(aiResponse: string): string[] {
         }
     }
 
+    // Strategy 4: More flexible parsing - look for any pattern with day names
+    if (meals.length === 0) {
+        for (const day of days) {
+            // Look for patterns like "1. Sunday", "Sunday:", "Sunday -", etc.
+            const patterns = [
+                new RegExp(`\\d+\\.\\s*${day}[:\\-\\s]*(.*)`, 'i'),
+                new RegExp(`${day}[:\\-]\\s*(.+)`, 'i'),
+                new RegExp(`\\*\\*${day}\\*\\*[:\\-\\s]*(.*)`, 'i'),
+            ];
+
+            for (const pattern of patterns) {
+                const dayLine = lines.find(line => pattern.test(line));
+                if (dayLine) {
+                    const match = dayLine.match(pattern);
+                    if (match && match[1] && match[1].trim().length > 0) {
+                        meals.push(match[1].trim());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Strategy 5: If all else fails, try to extract any meaningful content for each day
+    if (meals.length === 0) {
+        // Look for any lines that might contain meal information
+        const mealLines = lines.filter(line =>
+            line.length > 20 && // Reasonable length
+            !line.startsWith('#') && // Not a header
+            (line.includes('keto') || line.includes('meal') || line.includes('chicken') ||
+                line.includes('beef') || line.includes('fish') || line.includes('eggs') ||
+                line.includes('salad') || line.includes('vegetables'))
+        );
+
+        // Take up to 6 lines for our 6 days
+        for (let i = 0; i < Math.min(6, mealLines.length); i++) {
+            meals.push(mealLines[i]);
+        }
+    }
     return meals;
 }
 
@@ -756,6 +795,7 @@ program
 
         // Enhanced parsing: Extract meals from complex AI response format
         const meals = parseMealPlan(mealsText);
+
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         const mealPlan = days.map((day, i) => ({ day, meal: meals[i] || `${day} meal placeholder (keto, home-cooked)` }));
 
