@@ -47,8 +47,7 @@ type MealPlan = z.infer<typeof mealPlanSchema>;
 
 // OpenRouter models that support structured output well
 const OPENROUTER_MODELS = [
-    { name: 'x-ai/grok-4-fast', description: 'Grok-4 Fast (Fast, good quality, structured output)' },
-    { name: 'openai/gpt-5-nano', description: 'GPT-5 Nano (Fast, excellent structured output)' }
+    { name: 'x-ai/grok-4-fast', description: 'Grok-4 Fast (Fast, good quality, structured output)' }
 ];
 
 interface Config {
@@ -229,6 +228,49 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
         .replace(/\$\{finalAnswers\.fastingStart\}/g, finalAnswers.fastingStart)
         .replace(/\$\{finalAnswers\.fastingEnd\}/g, finalAnswers.fastingEnd)
         .replace(/\$\{finalAnswers\.diet\}/g, finalAnswers.diet);
+}
+
+function loadRecipePatterns(): any {
+    try {
+        const patternsPath = path.join(__dirname, '../keto-recipe-patterns.json');
+        const patternsContent = fs.readFileSync(patternsPath, 'utf8');
+        return JSON.parse(patternsContent);
+    } catch (error) {
+        console.warn(chalk.yellow('⚠️  Could not load recipe patterns, using basic prompts'));
+        return null;
+    }
+}
+
+function getRandomFromArray(arr: string[]): string {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateDynamicVarietyPrompt(patterns: any, finalAnswers: Config): string {
+    if (!patterns) return '';
+
+    // Sample from different categories to ensure variety
+    const proteinCategories = Object.keys(patterns.proteins);
+    const cookingMethods = Object.keys(patterns.cooking_methods);
+    const seasonings = Object.keys(patterns.seasonings);
+
+    // Build variety requirements dynamically
+    const proteinReq = `Use different protein categories each day (${proteinCategories.join(', ')})`;
+    const methodReq = `Vary cooking methods (${cookingMethods.join(', ')})`;
+    const seasoningReq = `Change seasoning profiles daily (${seasonings.join(', ')})`;
+
+    return `Create a highly varied 6-day keto meal plan using diverse recipe patterns to ensure no repeated ingredients or cooking methods. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}).
+
+CRITICAL VARIETY REQUIREMENTS:
+1) ${proteinReq}
+2) ${methodReq}
+3) ${seasoningReq}
+4) Rotate through different vegetable families and meal types
+
+For each day, combine one protein from a different category, one unique cooking method, fresh vegetables from un-used families, and a distinct seasoning approach. Create original keto dishes that feel creative and varied.
+
+Tailor for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}.
+
+Format: 1. Sunday: [Creative Dish Name] - Protein: [category] - Method: [technique] - Signature flavors: [profile] - Macros: [...], 2. Monday: [continue with different combinations]`;
 }
 
 function formatMealPlanForTable(mealPlan: MealPlan): Array<{ day: string; meal: string }> {
@@ -1043,11 +1085,24 @@ program
         }
 
         // Use custom prompt template if provided, otherwise use default
-        const defaultPrompt = `Create a comprehensive 6-day keto meal plan with detailed cooking instructions and nutritional information. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Each meal should be home-cooked, under 30 minutes prep time, and strictly avoid processed foods, sugary drinks, and high-carb items. Include specific ingredients, cooking steps, and estimated macros (fat/protein/carbs). Tailor the portions and ingredients for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Meal Name] - Ingredients: [...] - Instructions: [...] - Macros: [...], 2. Monday: [continue pattern]`;
+        let prompt: string;
 
-        const prompt = testConfig.promptTemplate
-            ? evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers)
-            : defaultPrompt;
+        if (testConfig.promptTemplate) {
+            // Check if this is a special dynamic variety prompt request
+            if (testConfig.promptTemplate.includes('DYNAMIC_VARIETY')) {
+                const patterns = loadRecipePatterns();
+                prompt = generateDynamicVarietyPrompt(patterns, finalAnswers);
+                if (!prompt) {
+                    console.warn(chalk.yellow('⚠️  Dynamic variety prompt failed, falling back to template'));
+                    prompt = evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers);
+                }
+            } else {
+                prompt = evaluatePromptTemplate(testConfig.promptTemplate, finalAnswers);
+            }
+        } else {
+            const defaultPrompt = `Create a comprehensive 6-day keto meal plan with detailed cooking instructions and nutritional information. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Each meal should be home-cooked, under 30 minutes prep time, and strictly avoid processed foods, sugary drinks, and high-carb items. Include specific ingredients, cooking steps, and estimated macros (fat/protein/carbs). Tailor the portions and ingredients for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Meal Name] - Ingredients: [...] - Instructions: [...] - Macros: [...], 2. Monday: [continue pattern]`;
+            prompt = defaultPrompt;
+        }
 
         // Debug logging for development
         if (testConfig.promptTemplate) {

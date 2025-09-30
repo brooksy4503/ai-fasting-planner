@@ -1,0 +1,270 @@
+{
+    "proteins": {
+        "red_meat": [
+            "grass-fed ground beef",
+            "ribeye steak",
+            "filet mignon",
+            "lamb chops",
+            "pork tenderloin",
+            "bison burger",
+            "venison steak",
+            "beef short ribs"
+        ],
+        "poultry": [
+            "organic chicken breast",
+            "dark meat chicken thighs",
+            "turkey breast",
+            "duck breast",
+            "ground turkey",
+            "chicken sausage",
+            "turkey bacon",
+            "cornish hen"
+        ],
+        "seafood": [
+            "wild salmon fillet",
+            "tuna steak",
+            "shrimp",
+            "scallops",
+            "mahi mahi",
+            "cod fillet",
+            "halibut steak",
+            "sardines",
+            "mussels",
+            "clams"
+        ],
+        "eggs_dairy": [
+            "organic eggs",
+            "goat cheese",
+            "feta cheese",
+            "parmesan cheese",
+            "cream cheese",
+            "greek yogurt",
+            "cottage cheese",
+            "hard boiled eggs"
+        ],
+        "plant_based": [
+            "firm tofu",
+            "tempeh",
+            "edamame",
+            "seitan",
+            "hemp seeds",
+            "chia seeds",
+            "nuts and seeds mix",
+            "coconut meat"
+        ]
+    },
+    "vegetables": {
+        "leafy_greens": [
+            "spinach",
+            "kale",
+            "arugula",
+            "mixed greens",
+            "lettuce varieties",
+            "collard greens",
+            "swiss chard",
+            "bok choy"
+        ],
+        "cruciferous": [
+            "broccoli",
+            "cauliflower",
+            "brussels sprouts",
+            "cabbage",
+            "kohlrabi",
+            "radishes",
+            "turnips",
+            "rutabagas"
+        ],
+        "nightshades": [
+            "bell peppers",
+            "eggplant",
+            "zucchini",
+            "yellow squash",
+            "tomatoes",
+            "green beans",
+            "okra",
+            "asparagus"
+        ],
+        "root_vegetables": [
+            "carrots (limited)",
+            "celery root",
+            "parsnips",
+            "beets",
+            "fennel",
+            "leeks",
+            "onions",
+            "garlic"
+        ],
+        "herbs": [
+            "fresh basil",
+            "cilantro",
+            "parsley",
+            "dill",
+            "mint",
+            "rosemary",
+            "thyme",
+            "oregano"
+        ]
+    },
+    "cooking_methods": {
+        "dry_heat": [
+            "pan-seared",
+            "grilled",
+            "broiled",
+            "baked",
+            "roasted",
+            "air-fried",
+            "stir-fried",
+            "sautéed"
+        ],
+        "moist_heat": [
+            "steamed",
+            "poached",
+            "slow-cooked",
+            "braised",
+            "stewed",
+            "pressure cooked",
+            "simmered",
+            "blanched"
+        ],
+        "fat_based": [
+            "deep-fried",
+            "shallow-fried",
+            "butter-basted",
+            "olive oil fried",
+            "coconut oil sautéed",
+            "ghee cooked",
+            "lard fried"
+        ],
+        "raw_preparations": [
+            "raw preparations",
+            "marinated raw",
+            "fresh salads",
+            "cold preparations",
+            "pressed preparations",
+            "fermented",
+            "pickled"
+        ]
+    },
+    "seasonings": {
+        "herb_based": [
+            "garlic-herb butter",
+            "rosemary-thyme blend",
+            "basil-oregano mix",
+            "sage-parsley seasoning",
+            "dill-lemon zest",
+            "mint-cilantro fresh",
+            "thyme-bay leaf classic"
+        ],
+        "spice_based": [
+            "cumin-coriander warm",
+            "paprika-smoked blend",
+            "cinnamon-nutmeg cozy",
+            "curry powder mix",
+            "five spice powder",
+            "za'atar middle eastern",
+            "ras el hanout exotic"
+        ],
+        "citrus_acid": [
+            "lemon zest-garlic",
+            "lime-cilantro fresh",
+            "orange-ginger bright",
+            "grapefruit-thyme",
+            "lime-chili zesty",
+            "lemon-dill light",
+            "citrus-herb blend"
+        ],
+        "umami_savory": [
+            "miso-ginger paste",
+            "coconut aminos glaze",
+            "sesame oil marinade",
+            "fish sauce reduction",
+            "mushroom powder",
+            "nutritional yeast",
+            "soy alternative"
+        ]
+    },
+    "meal_types": {
+        "breakfast": [
+            "egg-based dishes",
+            "smoothie bowls",
+            "baked goods",
+            "meat and eggs",
+            "cheese plates",
+            "yogurt parfaits",
+            "chia puddings",
+            "cereal alternatives"
+        ],
+        "lunch": [
+            "salads with protein",
+            "stir-fry bowls",
+            "sandwich alternatives",
+            "soup and stew",
+            "grain-free wraps",
+            "charcuterie style",
+            "protein bowls",
+            "cold preparations"
+        ],
+        "dinner": [
+            "roasted meats",
+            "seafood dishes",
+            "vegetarian mains",
+            "slow-cooked meals",
+            "grilled proteins",
+            "baked casseroles",
+            "stir-fry dinners",
+            "one-pan meals"
+        ],
+        "snacks": [
+            "cheese and nuts",
+            "vegetable sticks",
+            "meat roll-ups",
+            "fat bombs",
+            "smoothie bites",
+            "energy balls",
+            "pickle plates",
+            "herb dips"
+        ]
+    },
+    "cuisine_themes": {
+        "mediterranean": [
+            "Greek-inspired grilled meats with oregano",
+            "Italian herb-roasted vegetables",
+            "Spanish garlic shrimp",
+            "Middle Eastern spiced lamb",
+            "French herb butter sauces",
+            "Moroccan tagine style",
+            "Turkish kebab variations",
+            "Lebanese spice blends"
+        ],
+        "asian": [
+            "Korean bulgogi beef",
+            "Thai basil stir-fry",
+            "Japanese teriyaki chicken",
+            "Chinese five-spice pork",
+            "Indian butter chicken keto",
+            "Vietnamese lemongrass beef",
+            "Malaysian coconut curry",
+            "Filipino adobo style"
+        ],
+        "american_classic": [
+            "Southern fried chicken keto",
+            "Midwest meatloaf style",
+            "New England baked fish",
+            "Southwestern chili verde",
+            "Cajun blackened fish",
+            "Barbecue brisket keto",
+            "Buffalo wing chicken",
+            "Philly cheesesteak style"
+        ],
+        "fusion_modern": [
+            "Korean-Mexican bulgogi tacos",
+            "Italian-Indian butter chicken",
+            "French-Vietnamese beef pho",
+            "Japanese-Peruvian ceviche",
+            "Middle Eastern-Mexican lamb",
+            "Thai-American curry burger",
+            "Spanish-Asian paella fusion",
+            "Mediterranean-Asian grain bowls"
+        ]
+    }
+}

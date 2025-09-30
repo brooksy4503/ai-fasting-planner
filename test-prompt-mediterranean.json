@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "Create a vibrant Mediterranean-inspired 6-day keto meal plan with diverse cooking techniques and fresh herbs. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Focus on olive oil, fresh vegetables, herbs, seafood, and Mediterranean spices while staying strictly keto. Emphasize VARIETY: use different proteins each day (fish, chicken, beef, lamb, eggs, vegetarian), vary cooking methods (grill, bake, sauté, roast, steam), and incorporate different herbs/spices daily (oregano, basil, rosemary, thyme, garlic, lemon, olives). Avoid repeating the same main ingredients or cooking techniques. Include detailed Mediterranean preparations like Greek-style grilled meats, Italian herb-roasted vegetables, and Spanish tapas-inspired dishes. Tailor portions for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Mediterranean Meal Name] - Fresh herbs: [...] - Cooking method: [...] - Keto macros: [...], 2. Monday: [continue with different protein/method]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

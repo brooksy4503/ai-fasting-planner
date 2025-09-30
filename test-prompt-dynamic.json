@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "DYNAMIC_VARIETY",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

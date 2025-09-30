@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "Design an Asian-inspired 6-day keto meal plan featuring diverse stir-fry techniques, bold flavors, and fresh ingredients. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Use Asian keto staples like ginger, garlic, sesame oil, coconut aminos, and low-carb vegetables while maintaining strict keto macros. PRIORITIZE VARIETY: rotate proteins (tofu, chicken, beef, seafood, pork, eggs), change cooking styles (stir-fry, steam, grill, bake, slow-cook, quick-sear), and feature different Asian flavor profiles each day (ginger-garlic, sesame-soy, chili-spice, coconut-curry, miso-sesame, lemongrass-lime). Include authentic Asian preparations like Korean bulgogi-style, Thai basil stir-fry, Japanese teriyaki, Chinese five-spice, and Indian-inspired spice blends adapted for keto. Ensure no repeated main ingredients or flavor combinations. Customize for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Asian Keto Dish Name] - Key flavors: [...] - Cooking technique: [...] - Macros: [...], 2. Monday: [continue with different style/protein]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

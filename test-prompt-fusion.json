@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "Design a modern fusion 6-day keto meal plan blending global cuisines with innovative twists. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Combine elements from different culinary traditions while maintaining keto principles: fusion of Mexican-Asian, Italian-Middle Eastern, French-American, etc. MAXIMIZE VARIETY: rotate through diverse proteins (plant-based, poultry, red meat, seafood, game meats, eggs), experiment with cooking techniques (sous-vide, pressure cook, spiralize, dehydrate, ferment, smoke), and feature unique flavor fusions each day (wasabi-ginger lime, truffle-parmesan, chipotle-coconut, za'atar-lemon tahini, miso-maple bourbon, harissa-orange). Include creative fusion dishes like Korean-Mexican bulgogi tacos, Italian-Indian butter chicken, French-Vietnamese pho, Japanese-Peruvian ceviche, and Middle Eastern-Mexican spiced lamb. Never repeat the same fusion combination or primary cooking method. Adapt for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [Fusion Dish Name] - Cuisine blend: [...] - Signature technique: [...] - Macros: [...], 2. Monday: [continue with different fusion/protein]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

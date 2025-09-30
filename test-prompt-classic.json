@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "Create a comforting American-style 6-day keto meal plan with hearty, satisfying dishes that feel like home cooking. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). Focus on classic American comfort foods adapted for keto: rich sauces, hearty meats, creamy sides, and familiar flavors using keto-friendly ingredients. ENSURE VARIETY: alternate proteins (ground beef, steak, chicken, pork, fish, eggs), vary cooking methods (bake, grill, pan-sear, slow-cook, air-fry, roast), and change flavor profiles daily (garlic-herb butter, spicy Cajun, tangy barbecue, cheesy comfort, smoky grill, zesty citrus). Include traditional American preparations like meatloaf-style dishes, Southern fried adaptations, New England baked goods, Midwestern comfort classics, and Southwestern spice blends. Avoid repeating the same cuts of meat or cooking techniques. Portion for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format as: 1. Sunday: [American Comfort Dish] - Comfort style: [...] - Cooking method: [...] - Keto macros: [...], 2. Monday: [continue with different protein/style]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

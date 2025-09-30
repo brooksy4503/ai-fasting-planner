@@ -1,0 +1,13 @@
+{
+    "promptTemplate": "Generate a highly varied 6-day keto meal plan using diverse recipe patterns to ensure no repeated ingredients or cooking methods. Skip Saturday for 36-hour fast (${finalAnswers.fastingStart} to ${finalAnswers.fastingEnd}). CRITICAL VARIETY REQUIREMENTS: 1) Use different protein categories each day (red meat, poultry, seafood, eggs/dairy, plant-based - never repeat the same category on consecutive days), 2) Vary cooking methods across all techniques (dry heat, moist heat, fat-based, raw preparations), 3) Rotate through different vegetable families (leafy greens, cruciferous, nightshades, root vegetables, herbs), 4) Change seasoning profiles daily (herb-based, spice-based, citrus-acid, umami-savory), 5) Alternate meal types throughout the day (breakfast, lunch, dinner, snack). For each day, combine one protein from a different category, one unique cooking method, fresh vegetables from un-used families, and a distinct seasoning approach. Create original keto dishes that feel creative and varied, not repetitive. Portion for: ${finalAnswers.sex}, age ${finalAnswers.age}, height ${finalAnswers.height}, current weight ${finalAnswers.currentWeight}, target weight ${finalAnswers.targetWeight} in ${finalAnswers.timeframe}, activity level: ${finalAnswers.activityLevel}. Format: 1. Sunday: [Creative Dish Name] - Protein: [category] - Method: [technique] - Signature flavors: [profile] - Macros: [...], 2. Monday: [continue with different combinations]",
+    "fastingStart": "Friday 8pm",
+    "fastingEnd": "Sunday 8am",
+    "diet": "Keto",
+    "currentWeight": "180 lbs",
+    "targetWeight": "160 lbs",
+    "sex": "Male",
+    "age": "35",
+    "height": "5'10\"",
+    "timeframe": "6 months",
+    "activityLevel": "Moderately Active (moderate exercise, 3-5 days/week, 5-10k steps)"
+}

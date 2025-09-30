@@ -5,6 +5,8 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 ## Features
 
 - 🥑 **Keto-focused meal planning** - Home-cooked, low-carb meals under 30 minutes prep time
+- 🌍 **Diverse recipe themes** - Choose from Mediterranean, Asian-inspired, Classic American, and Fusion keto cuisines
+- 🔄 **Maximum variety** - Advanced prompts ensure different proteins, cooking methods, and seasonings each day
 - ⏰ **36-hour fasting support** - Meal plans that skip Saturday (Friday 8pm - Sunday 8am)
 - 🎯 **Personalized recommendations** - Tailored to your weight, height, age, sex, and activity level
 - 🚫 **No junk food** - Avoids pies, sausage rolls, sugary drinks, and processed foods
@@ -134,6 +136,46 @@ Tips from my weight loss:
 - Coffee with milk kept me going during 36-hour fasts.
 - Hydrate on fasting days to stay sharp.
 ```
+
+### Recipe Variety Options
+
+Choose from different culinary themes to maximize meal variety and prevent repetition:
+
+#### Mediterranean Keto Theme
+```bash
+fast-plan generate -c test-prompt-mediterranean.json
+```
+**Features:** Olive oil, fresh herbs, seafood, Greek/Italian/Middle Eastern influences. Varied proteins (fish, chicken, lamb) and cooking methods (grilled, roasted, steamed).
+
+#### Asian-Inspired Keto Theme
+```bash
+fast-plan generate -c test-prompt-asian.json
+```
+**Features:** Ginger, garlic, sesame oil, coconut aminos. Diverse cooking styles (stir-fry, steam, grill) with bold Asian flavor profiles.
+
+#### Classic American Comfort
+```bash
+fast-plan generate -c test-prompt-classic.json
+```
+**Features:** Hearty meats, creamy sides, familiar American flavors adapted for keto. Traditional comfort foods with varied seasonings.
+
+#### Modern Fusion Keto
+```bash
+fast-plan generate -c test-prompt-fusion.json
+```
+**Features:** Global cuisine blends with innovative twists. Creative combinations like Korean-Mexican tacos, Italian-Indian fusion.
+
+#### Systematic Pattern-Based Variety
+```bash
+fast-plan generate -c test-prompt-patterns.json
+```
+**Features:** Enforced variety across all categories - different proteins, cooking methods, vegetables, and seasonings each day.
+
+#### Dynamic Variety Generation
+```bash
+fast-plan generate -c test-prompt-dynamic.json
+```
+**Features:** Uses the keto-recipe-patterns.json database to dynamically generate prompts referencing available protein categories, cooking methods, and seasonings for maximum variety.
 
 ### AI Model Selection
 
