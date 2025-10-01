@@ -474,22 +474,33 @@ async function exportMealPlan(mealPlan: MealPlan): Promise<void> {
     }
 
     const timestamp = new Date().toISOString().slice(0, 10);
-    let filename = '';
+    let baseFilename = '';
     let content = '';
 
     switch (exportFormat) {
         case 'text':
-            filename = `meal-plan-${timestamp}.txt`;
+            baseFilename = `meal-plan-${timestamp}.txt`;
             content = generateTextExport(mealPlan);
             break;
         case 'json':
-            filename = `meal-plan-${timestamp}.json`;
+            baseFilename = `meal-plan-${timestamp}.json`;
             content = JSON.stringify(mealPlan, null, 2);
             break;
         case 'shopping':
-            filename = `shopping-list-${timestamp}.txt`;
+            baseFilename = `shopping-list-${timestamp}.txt`;
             content = generateShoppingList(mealPlan);
             break;
+    }
+
+    // Generate unique filename by incrementing if file exists
+    let filename = baseFilename;
+    let counter = 1;
+    const extension = path.extname(baseFilename);
+    const nameWithoutExt = path.basename(baseFilename, extension);
+
+    while (fs.existsSync(filename)) {
+        filename = `${nameWithoutExt}-${counter}${extension}`;
+        counter++;
     }
 
     try {
