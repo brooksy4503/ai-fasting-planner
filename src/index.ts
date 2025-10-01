@@ -232,9 +232,21 @@ function evaluatePromptTemplate(template: string, finalAnswers: Config): string 
 
 function loadRecipePatterns(): any {
     try {
-        const patternsPath = path.join(__dirname, '../keto-recipe-patterns.json');
-        const patternsContent = fs.readFileSync(patternsPath, 'utf8');
-        return JSON.parse(patternsContent);
+        // Try multiple possible locations for the patterns file
+        const possiblePaths = [
+            path.join(__dirname, '../keto-recipe-patterns.json'), // From source (dev)
+            path.join(__dirname, 'keto-recipe-patterns.json'),    // From dist (installed)
+            path.join(process.cwd(), 'keto-recipe-patterns.json'), // From project root
+        ];
+
+        for (const patternsPath of possiblePaths) {
+            if (fs.existsSync(patternsPath)) {
+                const patternsContent = fs.readFileSync(patternsPath, 'utf8');
+                return JSON.parse(patternsContent);
+            }
+        }
+
+        throw new Error('keto-recipe-patterns.json not found in any expected location');
     } catch (error) {
         console.warn(chalk.yellow('⚠️  Could not load recipe patterns, using basic prompts'));
         return null;
