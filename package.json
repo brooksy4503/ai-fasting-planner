@@ -1,6 +1,6 @@
 {
   "name": "ai-fasting-planner",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "AI-powered keto meal planner with 36-hour fasting support",
   "main": "./dist/index.js",
   "bin": {
