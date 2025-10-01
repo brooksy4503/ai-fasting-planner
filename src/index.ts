@@ -15,6 +15,8 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { z } from 'zod';
 import { WaitingExperience, WaitingExperienceType } from './waitingExperience';
+import { USDAAPIService } from './usdaApi';
+import { NutritionCalculator, USDAAPIInterface } from './nutritionCalculator';
 
 const program = new Command();
 
@@ -33,7 +35,9 @@ const mealPlanSchema = z.object({
                 fat: z.number().optional(),
                 protein: z.number().optional(),
                 carbs: z.number().optional()
-            }).optional()
+            }).optional(),
+            nutritionSource: z.enum(['llm', 'usda', 'mixed']).optional(),
+            nutritionConfidence: z.enum(['high', 'medium', 'low']).optional()
         }))
     })),
     fastingPeriod: z.object({
@@ -80,6 +84,7 @@ interface TestConfig {
 
 interface GlobalConfig {
     apiKey?: string;
+    usdaApiKey?: string;
     appUrl?: string;
     appTitle?: string;
     defaultModel?: string;
@@ -313,7 +318,23 @@ function formatMealPlanForTable(mealPlan: MealPlan): Array<{ day: string; meal: 
                 if (meal.macros.carbs) macros.push(`${meal.macros.carbs}g carbs`);
 
                 if (macros.length > 0) {
-                    mealText += ` | ${macros.join(', ')}`;
+                    let macroText = ` | ${macros.join(', ')}`;
+
+                    // Add nutrition source indicator
+                    if (meal.nutritionSource === 'usda') {
+                        macroText += ' 🥗'; // USDA verified
+                    } else if (meal.nutritionSource === 'llm') {
+                        macroText += ' 🤖'; // LLM estimate
+                    }
+
+                    // Add confidence indicator
+                    if (meal.nutritionConfidence === 'low') {
+                        macroText += '†'; // Corrected inaccurate claim
+                    } else if (meal.nutritionConfidence === 'medium') {
+                        macroText += '*'; // Medium confidence
+                    }
+
+                    mealText += macroText;
                 }
             }
 
@@ -409,7 +430,29 @@ async function showDayDetails(mealPlan: MealPlan, selectedDay: string): Promise<
             if (meal.macros.carbs) macroItems.push(`${meal.macros.carbs}g carbs`);
 
             if (macroItems.length > 0) {
-                console.log(chalk.yellow(`   Macros: ${macroItems.join(' | ')}`));
+                let macroText = macroItems.join(' | ');
+
+                // Add nutrition source information
+                if (meal.nutritionSource === 'usda') {
+                    macroText += ' (USDA verified';
+                } else if (meal.nutritionSource === 'llm') {
+                    macroText += ' (AI estimated';
+                } else {
+                    macroText += ' (';
+                }
+
+                // Add confidence level
+                if (meal.nutritionConfidence === 'high') {
+                    macroText += ' - high confidence)';
+                } else if (meal.nutritionConfidence === 'medium') {
+                    macroText += ' - medium confidence)';
+                } else if (meal.nutritionConfidence === 'low') {
+                    macroText += ' - corrected inaccurate claim)';
+                } else {
+                    macroText += ')';
+                }
+
+                console.log(chalk.yellow(`   Macros: ${macroText}`));
             }
         }
 
@@ -536,7 +579,22 @@ function generateTextExport(mealPlan: MealPlan): string {
                 if (meal.macros.fat) macros.push(`${meal.macros.fat}g fat`);
                 if (meal.macros.protein) macros.push(`${meal.macros.protein}g protein`);
                 if (meal.macros.carbs) macros.push(`${meal.macros.carbs}g carbs`);
-                if (macros.length > 0) output += `   Macros: ${macros.join(' | ')}\n`;
+                if (macros.length > 0) {
+                    let macroText = macros.join(' | ');
+                    if (meal.nutritionSource === 'usda') {
+                        macroText += ' (USDA verified';
+                    } else if (meal.nutritionSource === 'llm') {
+                        macroText += ' (AI estimated';
+                    }
+                    if (meal.nutritionConfidence === 'low') {
+                        macroText += ' - corrected inaccurate claim)';
+                    } else if (meal.nutritionConfidence) {
+                        macroText += ` - ${meal.nutritionConfidence} confidence)`;
+                    } else {
+                        macroText += ')';
+                    }
+                    output += `   Macros: ${macroText}\n`;
+                }
             }
 
             if (meal.ingredients && meal.ingredients.length > 0) {
@@ -625,6 +683,32 @@ program
                 return true;
             }
         }]);
+
+        // USDA API Key setup
+        const { setupUSDA } = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'setupUSDA',
+            message: 'Set up USDA API key for accurate nutritional data?',
+            default: true
+        }]);
+
+        let usdaApiKey = globalConfig.usdaApiKey;
+
+        if (setupUSDA) {
+            const { usdaKey } = await inquirer.prompt([{
+                type: 'password',
+                name: 'usdaKey',
+                message: 'Enter your USDA FoodData Central API Key (get from https://fdc.nal.usda.gov/api-guide.html):',
+                default: globalConfig.usdaApiKey,
+                validate: (input: string) => {
+                    if (!input || input.trim().length === 0) {
+                        return 'USDA API key is required for nutritional calculations. You can skip this and use LLM estimates only.';
+                    }
+                    return true;
+                }
+            }]);
+            usdaApiKey = usdaKey;
+        }
 
         // Model selection
         const { defaultModel } = await inquirer.prompt([{
@@ -765,6 +849,7 @@ program
         // Save configuration
         const newConfig: GlobalConfig = {
             apiKey,
+            usdaApiKey,
             appUrl,
             appTitle,
             defaultModel,
@@ -826,9 +911,17 @@ program
             // Show API key status (masked)
             if (globalConfig.apiKey) {
                 const maskedKey = globalConfig.apiKey.substring(0, 8) + '...' + globalConfig.apiKey.slice(-4);
-                console.log(chalk.green(`✅ API Key: ${maskedKey}`));
+                console.log(chalk.green(`✅ OpenRouter API Key: ${maskedKey}`));
             } else {
-                console.log(chalk.red('❌ API Key: Not set'));
+                console.log(chalk.red('❌ OpenRouter API Key: Not set'));
+            }
+
+            // Show USDA API key status (masked)
+            if (globalConfig.usdaApiKey) {
+                const maskedUSDAKey = globalConfig.usdaApiKey.substring(0, 8) + '...' + globalConfig.usdaApiKey.slice(-4);
+                console.log(chalk.green(`✅ USDA API Key: ${maskedUSDAKey}`));
+            } else {
+                console.log(chalk.yellow('⚠️  USDA API Key: Not set (will use LLM estimates for nutrition)'));
             }
 
             // Show default model
@@ -912,6 +1005,7 @@ program
     .description('Generate keto meal plan for 36-hour fasting')
     .option('-c, --config <path>', 'Path to meal plan configuration JSON file')
     .option('-m, --model <model>', 'Override the default AI model (e.g., openai/gpt-4o)')
+    .option('--debug-nutrition', 'Enable detailed nutrition calculation logging')
     .action(async (options) => {
         // Load global configuration
         const globalConfig = loadGlobalConfig();
@@ -1027,6 +1121,9 @@ program
 
         // Get API key from multiple sources (priority order)
         const apiKey = globalConfig.apiKey || finalAnswers.apiKey || process.env.OPENROUTER_API_KEY;
+
+        // Get USDA API key from multiple sources
+        const usdaApiKey = globalConfig.usdaApiKey || process.env.USDA_API_KEY;
 
         // Get selected model
         const selectedModel = getSelectedModel(globalConfig, options.model);
@@ -1165,6 +1262,101 @@ program
             prompt,
             schema: mealPlanSchema,
         });
+
+        // Enable nutrition debug logging if requested
+        if (options.debugNutrition) {
+            process.env.DEBUG_NUTRITION = '1';
+            console.log('🐛 Nutrition debug logging enabled');
+        }
+
+        // Calculate accurate nutrition using USDA API if available
+        let nutritionCalculated = false;
+        if (usdaApiKey) {
+            try {
+                console.log(chalk.blue('🥗 Calculating accurate nutrition data...'));
+
+                const usdaApi = new USDAAPIService(usdaApiKey);
+                const nutritionCalculator = new NutritionCalculator(usdaApi);
+
+                // Process all meals in the plan
+                for (const day of mealPlan.days) {
+                    for (const meal of day.meals) {
+                        if (meal.ingredients && meal.ingredients.length > 0) {
+                            try {
+                                const mealNutrition = await nutritionCalculator.calculateMealNutrition(meal.ingredients);
+
+                                // Check if LLM claimed USDA verification but provided inaccurate data
+                                const llmClaimedUSDA = meal.nutritionSource === 'usda';
+                                const hasLLMMacros = meal.macros && (
+                                    meal.macros.calories || meal.macros.fat || meal.macros.protein || meal.macros.carbs
+                                );
+
+                                let nutritionSource: 'usda' | 'llm' | 'mixed' = 'usda';
+                                let nutritionConfidence = mealNutrition.confidence;
+
+                                if (llmClaimedUSDA && hasLLMMacros && meal.macros) {
+                                    // LLM claimed USDA, check if its macros are reasonably close to our calculation
+                                    const llmCalories = meal.macros.calories || 0;
+                                    const ourCalories = mealNutrition.total.calories;
+                                    const percentDiff = Math.abs(ourCalories - llmCalories) / Math.max(llmCalories, ourCalories);
+
+                                    if (percentDiff > 0.2) { // More than 20% difference
+                                        // LLM's USDA claim was incorrect
+                                        nutritionSource = 'usda'; // Still usda, but corrected
+                                        nutritionConfidence = 'low'; // Low confidence in LLM's calculation
+                                        if (process.env.DEBUG_NUTRITION) {
+                                            console.log(`⚠️  LLM claimed USDA (${llmCalories} cal) but calculation shows ${Math.round(ourCalories)} cal (${Math.round(percentDiff * 100)}% difference)`);
+                                        }
+                                    } else {
+                                        // LLM's calculation was reasonably accurate
+                                        nutritionConfidence = 'medium'; // Trust but verify
+                                    }
+                                }
+
+                                // Update meal with accurate nutrition data
+                                meal.macros = {
+                                    calories: Math.round(mealNutrition.total.calories),
+                                    fat: Math.round(mealNutrition.total.fat * 10) / 10, // Round to 1 decimal
+                                    protein: Math.round(mealNutrition.total.protein * 10) / 10,
+                                    carbs: Math.round(mealNutrition.total.carbs * 10) / 10,
+                                };
+
+                                // Set nutrition source and confidence
+                                meal.nutritionSource = nutritionSource;
+                                meal.nutritionConfidence = nutritionConfidence;
+
+                                nutritionCalculated = true;
+                            } catch (error) {
+                                console.warn(chalk.yellow(`⚠️  Failed to calculate nutrition for "${meal.name}": ${error instanceof Error ? error.message : 'Unknown error'}`));
+                                // Keep LLM-provided macros as fallback
+                                meal.nutritionSource = 'llm';
+                                meal.nutritionConfidence = 'low';
+                            }
+                        } else {
+                            // No ingredients provided, keep LLM macros
+                            meal.nutritionSource = 'llm';
+                            meal.nutritionConfidence = 'low';
+                        }
+                    }
+                }
+
+                if (nutritionCalculated) {
+                    console.log(chalk.green('✅ Nutrition data calculated using USDA database'));
+                }
+            } catch (error) {
+                console.warn(chalk.yellow(`⚠️  Failed to initialize USDA nutrition service: ${error instanceof Error ? error.message : 'Unknown error'}`));
+                console.log(chalk.gray('Falling back to LLM-provided nutrition estimates'));
+            }
+        } else {
+            console.log(chalk.gray('ℹ️  USDA API key not configured - using LLM nutrition estimates'));
+            // Mark all meals as using LLM nutrition
+            for (const day of mealPlan.days) {
+                for (const meal of day.meals) {
+                    meal.nutritionSource = 'llm';
+                    meal.nutritionConfidence = 'low';
+                }
+            }
+        }
 
         // Debug: Log AI response for troubleshooting
         if (process.env.DEBUG_PROMPT || testConfig.promptTemplate) {

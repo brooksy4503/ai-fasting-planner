@@ -9,6 +9,7 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 - 🔄 **Maximum variety** - Advanced prompts ensure different proteins, cooking methods, and seasonings each day
 - ⏰ **36-hour fasting support** - Meal plans that skip Saturday (Friday 8pm - Sunday 8am)
 - 🎯 **Personalized recommendations** - Tailored to your weight, height, age, sex, and activity level
+- 🥗 **Accurate nutrition data** - USDA FoodData Central integration for precise macro calculations (calories, protein, fat, carbs)
 - 🚫 **No junk food** - Avoids pies, sausage rolls, sugary drinks, and processed foods
 - ☕ **Fasting-friendly** - Includes tips for coffee with milk during fasting periods
 - 🤖 **AI-powered** - Choose from multiple AI models via OpenRouter (Grok-4, GPT-4o, Claude, Llama, etc.)
@@ -16,13 +17,19 @@ AI-powered keto meal planner with 36-hour fasting support. Generate personalized
 
 ## Quick Start
 
-### 1. Get Your API Key
+### 1. Get Your API Keys
 
+#### OpenRouter API Key (Required)
 1. Visit [OpenRouter](https://openrouter.ai)
-2. Sign up for a free account  
+2. Sign up for a free account
 3. Get your API key from the dashboard
 
-You'll be prompted for this key when you run the CLI, or you can set it as an environment variable (see Configuration section below).
+#### USDA FoodData Central API Key (Optional but Recommended)
+1. Visit [USDA FoodData Central API Guide](https://fdc.nal.usda.gov/api-guide.html)
+2. Sign up for a free API key
+3. This enables accurate nutritional data calculation instead of AI estimates
+
+You'll be prompted for these keys when you run the CLI, or you can set them as environment variables (see Configuration section below).
 
 ### 2. Installation
 
@@ -54,8 +61,9 @@ npm run build
 You can either enter your API key when prompted, or set it as an environment variable to avoid entering it each time:
 
 ```bash
-# Set as environment variable (recommended)
-export OPENROUTER_API_KEY=your_actual_api_key_here
+# Set as environment variables (recommended)
+export OPENROUTER_API_KEY=your_openrouter_api_key_here
+export USDA_API_KEY=your_usda_api_key_here
 
 # Optional: Configure app attribution for OpenRouter analytics
 export APP_URL=https://github.com/your-username/ai-fasting-planner
@@ -65,7 +73,8 @@ export APP_TITLE="AI Fasting Planner"
 **For development**: Create a `.env.local` file in the project directory:
 ```bash
 # .env.local file (development only)
-OPENROUTER_API_KEY=your_actual_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+USDA_API_KEY=your_usda_api_key_here
 APP_URL=https://github.com/your-username/ai-fasting-planner
 APP_TITLE=AI Fasting Planner
 ```
@@ -123,12 +132,12 @@ Your Keto Meal Plan (Fasting: Friday 8pm - Sunday 8am)
 ┌───────────┬─────────────────────────────────────────────────────────┐
 │ Day       │ Meal                                                    │
 ├───────────┼─────────────────────────────────────────────────────────┤
-│ Sunday    │ Scrambled eggs with avocado and spinach                 │
-│ Monday    │ Grilled chicken salad with olive oil dressing          │
-│ Tuesday   │ Salmon with roasted broccoli and cauliflower           │
-│ Wednesday │ Beef stir-fry with zucchini noodles                    │
-│ Thursday  │ Pork chops with green beans and butter                 │
-│ Friday    │ Tuna salad with mixed greens (before fasting)          │
+│ Sunday    │ Scrambled eggs with avocado and spinach | 450cal, 35g fat, 30g protein, 3g carbs 🥗 │
+│ Monday    │ Grilled chicken salad with olive oil dressing | 550cal, 45g fat, 35g protein, 5g carbs 🥗 │
+│ Tuesday   │ Salmon with roasted broccoli and cauliflower | 600cal, 50g fat, 45g protein, 5g carbs 🥗 │
+│ Wednesday │ Beef stir-fry with zucchini noodles | 500cal, 40g fat, 35g protein, 6g carbs 🥗 │
+│ Thursday  │ Pork chops with green beans and butter | 650cal, 55g fat, 40g protein, 4g carbs 🥗 │
+│ Friday    │ Tuna salad with mixed greens (before fasting) | 400cal, 30g fat, 25g protein, 4g carbs 🥗 │
 └───────────┴─────────────────────────────────────────────────────────┘
 
 Tips from my weight loss:
@@ -136,6 +145,9 @@ Tips from my weight loss:
 - Coffee with milk kept me going during 36-hour fasts.
 - Hydrate on fasting days to stay sharp.
 ```
+
+**🥗 = USDA-verified nutrition data** (when USDA API key is configured)
+**† = Corrected inaccurate LLM claim** (when LLM claimed USDA but provided wrong numbers)
 
 ### Recipe Variety Options
 
@@ -209,6 +221,7 @@ fast-plan generate --model openai/gpt-4o
 
 # Use a different model with custom config
 fast-plan generate --config my-config.json --model anthropic/claude-3.5-sonnet
+fast-plan generate --debug-nutrition  # Enable detailed nutrition calculation logging
 ```
 
 #### View Current Configuration
@@ -413,7 +426,42 @@ When using custom prompt templates, debug information is automatically displayed
 For default prompts, enable debug logging with:
 ```bash
 DEBUG_PROMPT=1 fast-plan generate
+DEBUG_NUTRITION=1 fast-plan generate  # Enable nutrition calculation debug logging
 ```
+
+### Nutrition Data Validation
+
+The system automatically validates nutrition claims from the AI model:
+
+- **USDA Verification**: When the AI claims "USDA verified" nutrition, the system recalculates using real USDA data
+- **Accuracy Check**: If the AI's numbers differ by more than 20% from the actual calculation, it's flagged as an inaccurate claim
+- **Confidence Levels**:
+  - 🥗 **High confidence**: Strong USDA data match
+  - 🥗* **Medium confidence**: Reasonable match or LLM estimate
+  - 🥗† **Low confidence**: Corrected inaccurate LLM claim
+
+This ensures users always get accurate nutritional information, even when the AI makes calculation errors.
+
+#### Testing Nutrition Integration
+
+Test the USDA nutrition calculation functionality:
+
+```bash
+# If installed globally
+npm run test-nutrition -- your-usda-api-key
+
+# Or using npx
+npx ai-fasting-planner test-nutrition your-usda-api-key
+
+# If cloned for development
+node test-nutrition.js your-usda-api-key
+```
+
+This will test:
+- USDA API connectivity
+- Food search functionality
+- Ingredient parsing and nutrition calculation
+- Error handling and fallback behavior
 
 See [PROMPT_TEMPLATES.md](PROMPT_TEMPLATES.md) for complete documentation.
 
